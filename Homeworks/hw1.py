@@ -2,12 +2,14 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn import tree
-from sklearn.cross_validation import KFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
 import scipy as sp
 import utils
 import utils.Stats as mystats
+import utils.plots as myplot
+import utils.Tree as mytree
+import sys
 
 
 
@@ -82,27 +84,159 @@ def decision_spambase_set_no_libs():
     spam_data = utils.load_and_normalize_spam_data()
     test, train = utils.split_test_and_train(spam_data)
     print str(len(train)) + " # in training set <--> # in test " + str(len(test))
-    node = mystats.Node(np.ones(len(train)))
+
+    node = mytree.Node(np.ones(len(train)))
     branch_node(node, train, 8, 'is_spam')
     #node.show_children_tree()
     node.show_children_tree(follow=False)
 
-    model = mystats.Tree(node)
+    model = mytree.Tree(node)
     model.print_leaves()
     print 'Trained model error is : ' + str(model.error())
 
     node.presence = np.ones(len(test))
     test_node(node, test, 'is_spam')
-    test_tree = mystats.Tree(node)
+    test_tree = mytree.Tree(node)
     prediction = test_tree.predict_obj()
+    test_tree.print_leaves_test()
     print 'predict sum: ' + str(sum(prediction))
-    print test_tree.error()
+    print 'MSE:' + str(test_tree.error_test())
 
     [tp, tn, fp, fn] = mystats.get_performance_stats(test['is_spam'].as_matrix(), prediction)
     print 'TP: {}\tFP: {}\nTN: {}\tFN: {}'.format(tp, fp, tn, fn)
+    print str(mystats.compute_accuracy(tp,tn, fp,fn))
+
+def decision_housing_set_no_libs():
+    """
+    Solution for HW1 prob 1
+    """
+    print('Homework 1 problem 1 - No Libraries - Regression Decision tree')
+    print('Housing Dataset')
+    test, train = utils.load_and_normalize_housing_set()
+    print str(len(train)) + " # in training set <--> # in test " + str(len(test))
+    node = mytree.Node(np.ones(len(train)))
+    branch_node(node, train, 3, 'MEDV', regression=True)
+    #node.show_children_tree()
+    node.show_children_tree(follow=False)
+
+    model = mytree.Tree(node)
+    model.print_leaves()
+    print 'Trained model error is : ' + str(model.error())
+
+    node.presence = np.ones(len(test))
+    test_node(node, test, 'MEDV', regression=True)
+    test_tree = mytree.Tree(node)
+    prediction = test_tree.predict_obj()
+    raw_input()
+    print 'predict sum: ' + str(sum(prediction))
+    test_tree.print_leaves_test()
+    print 'ERROR: ' + str(test_tree.error_test())
+    print prediction
+    print test['MEDV']
+    MSE = mystats.compute_MSE_arrays(prediction, test['MEDV'])
+    print 'MSE: ' + str(MSE)
+    print 'RMSE: ' + str(np.sqrt(MSE))
+
+    #[tp, tn, fp, fn] = mystats.get_performance_stats(test['MEDV'].as_matrix(), prediction)
+    #print 'TP: {}\tFP: {}\nTN: {}\tFN: {}'.format(tp, fp, tn, fn)
 
 
-def branch_node(node, df, threshold, Y):
+def regression_line_spam_no_libs():
+    """
+    Solution for HW1 prob 2
+    """
+    print('Homework 1 problem 2 - No Libraries - Regression Line')
+    print('Spam Dataset')
+    spam_data = utils.load_and_normalize_spam_data()
+    test, train = utils.split_test_and_train(spam_data)
+    columns = train.columns[:-1]
+    Y_fit = mystats.linear_regression_points(train[columns], train['is_spam'])
+
+    #print 'Y_fit'
+    #print Y_fit
+    #for i in range(0, len(Y_fit)):
+    #    print str(Y_fit[i]) + ' -- ' + str(train['is_spam'][i])
+
+    col_MSE = {}
+    for i, col in enumerate(columns):
+        col_fit = Y_fit[i] + Y_fit[-1]
+        col_MSE[col] = mystats.compute_MSE_arrays(col_fit, train['is_spam'])
+    print col_MSE
+    RMSE = np.sqrt(col_MSE.values())
+    average_MSE = utils.average(col_MSE.values())
+    average_RMSE = utils.average(RMSE)
+    print 'Average MSE: ' + str(average_MSE)
+    print 'Average RMSE: ' + str(average_RMSE)
+
+
+def regression_line_housing_no_libs():
+    """
+    Solution for HW1 prob 2
+    """
+    print('Homework 1 problem 2 - No Libraries - Regression Line')
+    print('Housing Dataset')
+    test, train = utils.load_and_normalize_housing_set()
+    print str(len(train)) + " # in training set <--> # in test " + str(len(test))
+    columns = train.columns[:-1]
+    Y_fit = mystats.linear_regression_points(train[columns], train['MEDV'])
+    print 'Y_fit'
+    print Y_fit
+    #for i in range(0, len(Y_fit)):
+    #    print str(Y_fit[i]) + ' -- ' + str(train['MEDV'][i])
+
+    row_sums = np.zeros(len(Y_fit[0]))
+    for col in Y_fit:
+        for i in range(0, len(col)):
+            row_sums[i] += col[i]
+
+    print row_sums
+
+    col_MSE = {}
+    for i, col in enumerate(columns):
+        col_fit = row_sums[i]  # Y_fit[i] + Y_fit[-1]
+        col_MSE[col] = mystats.compute_MSE(col_fit, train['MEDV'])
+    print col_MSE
+    RMSE = np.sqrt(col_MSE.values())
+    average_MSE = utils.average(col_MSE.values())
+    average_RMSE = utils.average(RMSE)
+    print 'Average MSE: ' + str(average_MSE)
+    print 'Average RMSE: ' + str(average_RMSE)
+
+
+
+def test_regression_line_housing_no_libs():
+    """
+    Testing 2 variable solution for HW1 prob 2
+    """
+    print('Testing linear regression with 2 columns')
+    test, train = utils.load_and_normalize_housing_set()
+    print str(len(train)) + " # in training set <--> # in test " + str(len(test))
+    columns = train.columns[:-1]
+    Y_fit = mystats.linear_regression_points(train[columns[0]], train['MEDV'])
+    #for i, col in enumerate(columns):
+    print 'Y_fit'
+    print Y_fit
+    for i in range(0, len(Y_fit)):
+        print str(Y_fit[i]) + ' -- ' + str(train['MEDV'][i])
+    print train[columns[0]]
+    #myplot.points([train[columns[0]], train['MEDV']])
+
+    #myplot.points([train[columns[0]], list(Y_fit[0])])
+    myplot.fit_v_point([train[columns[0]], train['MEDV'], list(Y_fit[0] + Y_fit[-1])])
+    col_MSE = {}
+    print columns[0]
+    i = 0
+    col = 'CRIM'
+    col_fit = Y_fit[i] + Y_fit[-1]
+    col_MSE[col] = mystats.compute_MSE_arrays(col_fit, train['MEDV'])
+    print col_MSE
+
+
+
+
+
+
+def branch_node(node, df, threshold, Y, regression=False):
     """
     :param node: Node object defined in Stats
     :param df: The dataframe being used by the tree
@@ -113,24 +247,30 @@ def branch_node(node, df, threshold, Y):
     print 'Branching Level : ' + str(node.level)
     data = node.get_node_data(df)
     print 'Length of data ' + str(len(data)) + ' len df: ' + str(len(df))
-    feature, label = mystats.find_best_feature_and_label_for_split(data, Y)
+    feature, label = mytree.find_best_feature_and_label_for_split(data, Y, regression)
+    print 'feature: {} label: {}'.format(feature, label)
     if feature is not None and node.level < threshold:
         A_array, B_array = node.split(feature, df[feature], label)
         print ' A : {} B: {}'.format(sum(A_array), sum(B_array))
         node.add_left(A_array)
         node.add_right(B_array)
-        branch_node(node.left, df, threshold, Y)
-        branch_node(node.right, df, threshold, Y)
+        branch_node(node.left, df, threshold, Y, regression)
+        branch_node(node.right, df, threshold, Y, regression)
     else:
-        predict = 0
-        prob = mystats.binary_probability(data, Y)
-        print 'PROBABILITY ' + str(prob)
-        if prob >= .5:
-            predict = 1
-        error = mystats.binary_error(data, Y, predict)
+        if not regression:
+            predict = 0
+            prob = mystats.binary_probability(data, Y)
+            print 'PROBABILITY ' + str(prob)
+            if prob >= .5:
+                predict = 1
+            error = mystats.binary_error(data, Y, predict)
+        else:
+            print str(feature) +'is fueaturea ' + str(label) + str(node.presence)
+            predict = sum(data[Y])/len(data[Y])
+            error = mystats.compute_MSE(predict, list(data[Y]))
         node.leaf(predict, error)
 
-def test_node(node, df, Y):
+def test_node(node, df, Y, regression=False):
     """
     :param node: Node object defined in Stats
     :param df: The dataframe being used by the tree
@@ -150,39 +290,40 @@ def test_node(node, df, Y):
         node.left.set_presence(A_array)
         node.right.set_presence(B_array)
         if node.left is not None:
-            test_node(node.left, df, Y)
+            test_node(node.left, df, Y, regression)
         if node.right is not None:
-            test_node(node.right, df, Y)
+            test_node(node.right, df, Y, regression)
     else:
         predict = node.predict
-        error = mystats.binary_error(data, Y, predict)
+        if not regression:
+            error = mystats.binary_error(data, Y, predict)
+        else:
+            error = mystats.compute_MSE(predict, list(data[Y]))
         node.test_leaf(error)
-
-
-
-
-def k_folds(df, k):
-    """ k folds for hw1 prob 2"""
-    number = np.floor(len(df)/k)
-    print number
-    folds = []
-    #for i in range(0, k):
-    #    folds.append(df.sample(number, replace=False))
-    kf = KFold(len(df), n_folds=k)
-    for train, test in kf:
-        print test
-        print train
-    return folds
 
 
 def analyze_spambase_hw1():
     """ HW1 - problem 2 """
     spamData = utils.load_and_normalize_spam_data()
-    k_folds(spamData, 10)
+    mystats.k_folds(spamData, 10)
 
 
 def homework1():
+    # -- Uses sklearn to analyze datasets --
     #regression_housing_set()
     #decision_spambase_set()
-    decision_spambase_set_no_libs()
-    #analyze_spambase_hw1()
+    #analyze_spambase_hw1()  # kfolds from last year's homework
+
+    # -- Maual implementation of ML algorithms --
+
+    # -- Decision Trees --
+    #decision_spambase_set_no_libs()
+    decision_housing_set_no_libs()
+
+    # -- Test 2D regression line and plot --
+    #test_regression_line_housing_no_libs()
+
+    # -- Linear Regression --
+    #regression_line_housing_no_libs()
+    #regression_line_spam_no_libs()
+

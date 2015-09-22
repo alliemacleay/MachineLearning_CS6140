@@ -6,7 +6,7 @@ import os
 
 
 def load_and_normalize_housing_set():
-    path = 'data/housing'
+    path = '../data/housing'
     test_file = "housing_test.txt"
     train_file = "housing_train.txt"
     test = read_housing_file(os.path.join(path, test_file))
@@ -17,7 +17,7 @@ def load_and_normalize_housing_set():
 
 
 def load_and_normalize_spam_data():
-    path = os.path.join('data', 'spambase')
+    path = os.path.join('../data', 'spambase')
     spamData = read_spam_file(path, 'spambase.data')
     spamData = normalize_data(spamData, 'is_spam')
     return spamData
@@ -51,7 +51,7 @@ def normalize_data(df, predict):
         min = df[col].min()
         df[col] = df[col] - min
         max = df[col].max()
-        df[col] = df[col]/max
+        df[col] = df[col]/(max-min)
     return df
 
 def read_housing_file(f):
@@ -93,3 +93,10 @@ def read_file(f, delim=None):
                 text[i] = txt
     df = pd.DataFrame(text, dtype=np.float)
     return df
+
+
+def matrix_inverse(matrix):
+    return np.linalg.inv(matrix)
+
+def average(arr):
+    return float(sum(arr))/len(arr)
