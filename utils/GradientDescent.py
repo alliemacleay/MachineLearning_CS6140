@@ -3,6 +3,7 @@ __author__ = 'Allison MacLeay'
 import numpy as np
 import pandas as pd
 from CS6140_A_MacLeay.utils import average
+import CS6140_A_MacLeay.utils.Stats as mystats
 
 def xgradient(X, Y, w_old, gd_lambda, descent=True, epsilon_accepted=5, max_iterations=None):
     """ Gradient Ascent or Descent
@@ -72,38 +73,31 @@ def gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.005, max_iteration
         iterations += 1
     return w_new
 
-def logistic_gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.005, max_iterations=10000000):
+def logistic_gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.8, max_iterations=10000000):
     accepted = False
     iterations = 0
     epsilon = 1
     X['b'] = np.ones(len(X))
     x = X.transpose()
-    m = X.shape[1]
+    m = X.shape[1]  # number of cols
     print 'sh0: {} len(X): {}'.format(m, len(X))
-    w_old = np.zeros(m)
+    w_old = pd.DataFrame(np.ones(m))
+    #TODO these values can't be negative
+    return w_old
     while not accepted:
-        h = np.dot(X, w_old)
-        print x
-        print 'w'
-        print w_old
-        print 'h'
-        print h
-        print 'Y'
-        print list(Y)
-        loss = [h[i] - list(Y)[i] for i in range(0, len(h))]
-        print 'loss {}'.format(loss)
-        MSE = sum([loss[i] ** 2 for i in range(0, len(loss))])/len(loss)
-        print 'MSE {}'.format(MSE)
-        diff = np.dot(X.transpose(), loss) / len(loss)
+        h = abs(1/(1 - np.exp(np.dot(X, w_old))))
+        probabilities = [h[i] **(list(Y)[i]) * (1 - h[i] ** (1 - list(Y)[i])) for i in range(0, len(h))]
+        log_likelihood = mystats.log_likelihood(probabilities)
+        print 'log_likelihood {}'.format(log_likelihood)
+        diff = gd_lambda * np.dot((Y - h), X)
         print 'diff {}'.format(diff)
-        w_new = w_old - gd_lambda * diff
+        # gradient ascent
+        w_new = w_old + gd_lambda * diff
         print w_new
+        #epsilon = abs(sum(w_new - w_old)/len(w_new))
         epsilon = sum(w_new - w_old)/len(w_new)
         print 'epsilon: {}'.format(epsilon)
-        print 'X and w:'
-        print X['b']
         print w_new[:]
-        print 'ova'
         w_old = w_new
         if epsilon < epsilon_accepted:
             accepted = True

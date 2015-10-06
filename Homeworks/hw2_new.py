@@ -5,6 +5,7 @@ import CS6140_A_MacLeay.utils.Tree as mytree
 import CS6140_A_MacLeay.utils.Stats as mystats
 import CS6140_A_MacLeay.utils.GradientDescent as gd
 import CS6140_A_MacLeay.utils.NNet as nnet
+import CS6140_A_MacLeay.utils.Perceptron as perc
 import hw1
 import numpy as np
 import pandas as pd
@@ -172,95 +173,14 @@ def q_1():
 def q_2():
     """ Perceptron """
     test, train = utils.load_perceptron_data()
+    print test[4]
     print train.head(5)
-    train_perceptron(train, 4, .0005)
-
-def train_perceptron(data, predict, learning_rate):
-    max_iterations = 100
-    ct_i = 0
-    size = len(data)
-    cols = []
-    for col in data.columns:
-        if col != predict:
-            cols.append(col)
-    X = data[cols]
-
-    # Add column of ones
-    X['ones'] = np.ones(size)
-    X = X.reindex()
-    p = data[predict]
-
-    # keep track of the mistakes
-    last_m = 10000000000000
-
-    # Switch x values from positive to negative if y < 0
-    ct_neg_1 = 0
-    print p[:5]
-    for i, row in enumerate(X.iterrows()):
-        if list(p)[i] < 0:
-            ct_neg_1 += 1
-            for cn, col in enumerate(X.columns):
-                X.iloc[i, cn] *= -1
-
-    #print 'ct neg is {} '.format(ct_neg_1)
-    #print size
-
-    # Get random array of w values
-    w = mystats.init_w(5)[0]
-    print 'w array'
-    print w.head(5)
-    print X.head(5)
-
-    while ct_i < max_iterations:  # for each iteration
-
-        J = []
-        n_row = 0
-        mistakes = pd.DataFrame(columns=X.columns)
-        mistakes_x_sum = 0
-        print 'w'
-        print w
-        for r_ct, row in X.iterrows():  # for each row
-            x_sum = 0
-            #print 'ct_i {} j {} w {} x {} x_sum {}'.format(ct_i, n_row, wj, X.iloc[n_row][ct_i], x_sum)
-            for c_ct, col in enumerate(X.columns):
-                x_sum += w[c_ct] * row[col]
-            #if n_row < 5:
-            #    print x_sum
-            n_row += 1
-            J.append(x_sum)
-            if x_sum < 0:
-                mistakes.loc[len(mistakes)] = row
-                mistakes_x_sum += x_sum
-                #print 'mistakes len {}'.format(len(mistakes))
-                #print mistakes.head(5)
-
-        # Check dot product (paranoia)
-        #print 'J'
-        #print J[:5]
-        #print 'dot'
-        #print np.dot(X,w)[:5]
-
-        # check objective
-        print 'sum of J is {}'.format(sum(J))
-        print 'iteration: {} length: {} sum: {}'.format(ct_i, len(mistakes), -1 * mistakes_x_sum)
-
-        print '{} mis*lr={}'.format(mistakes_x_sum, mistakes_x_sum * learning_rate)
-
-        # update w
-        for wi, wcol in enumerate(mistakes.columns):
-            # Add the sum of mistakes for each column to w for that column
-            w[wi] += learning_rate * sum(mistakes[wcol])
-            print 'wcol: {} {}'.format(wcol, sum(mistakes[wcol]))
-        #w += sum(mistakes) * learning_rate
-
-        if last_m < (-1 * mistakes_x_sum):
-            print 'last_m is {} and size of mistakes is {}'.format(last_m, -1 * mistakes_x_sum)
-            break
-
-        last_m = -1 * mistakes_x_sum
-        ct_i += 1
-
-    print pd.DataFrame(J).head(5)
+    model = perc.Perceptron(train, 4, .0005, 3)
+    print model.model
+    print 'Training error'
+    model.print_score()
+    print 'Testing error'
+    model.print_score(model.get_score(model.get_predicted(test), test[4]))
 
 
 def q_3():
@@ -270,8 +190,8 @@ def q_3():
 
 def homework2():
     #q_1()
-    q_2()
-    #q_3()
+    #q_2()
+    q_3()
 
 
 if __name__ =='__main__':
