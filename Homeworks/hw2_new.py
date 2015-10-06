@@ -97,26 +97,28 @@ def linear_gd(df_train, df_test, Y):
     binary = utils.check_binary(df_train[Y])
     model = gd.gradient(df_train, df_train[Y], .1, max_iterations=5000)
     print model
-    #m, b = gd.get_slope_intercept(model, df_train[Y], binary)
-    #print 'm: {} b: {}'.format(m, b)
-    #predict = gd.predict(df_train, m, b)
     predict = gd.predict(df_train, model)
     print predict
     error_train = mystats.get_error(predict, df_train[Y], binary)
     predict = gd.predict(df_test, model)
     print predict
-    raw_input()
     error_test = mystats.get_error(predict, df_test[Y], binary)
-    #error_test = 'none'
-    #error_train = 'none'
     return [error_train, error_test]
 
 def logistic_gd(df_train, df_test, Y):
     """ logistic gradient descent """
     binary = utils.check_binary(df_train[Y])
-    predict = []
+    model = gd.logistic_gradient(df_train, df_train[Y], .1, max_iterations=5000)
+    print model
+    predict = gd.predict(df_train, model)
+    print predict
     error_train = mystats.get_error(predict, df_train[Y], binary)
+    predict = gd.predict(df_test, model)
+    print predict
     error_test = mystats.get_error(predict, df_test[Y], binary)
+    #TODO data in probabilities can't be negative
+    error_train = 0
+    error_test = 0
     return [error_train, error_test]
 
 def print_results_1(spam, housing):
@@ -171,10 +173,10 @@ def q_2():
     """ Perceptron """
     test, train = utils.load_perceptron_data()
     print train.head(5)
-    train_perceptron(train, 4, .05)
+    train_perceptron(train, 4, .0005)
 
 def train_perceptron(data, predict, learning_rate):
-    max_iterations = 5
+    max_iterations = 100
     ct_i = 0
     size = len(data)
     cols = []
@@ -242,11 +244,7 @@ def train_perceptron(data, predict, learning_rate):
         print 'sum of J is {}'.format(sum(J))
         print 'iteration: {} length: {} sum: {}'.format(ct_i, len(mistakes), -1 * mistakes_x_sum)
 
-
         print '{} mis*lr={}'.format(mistakes_x_sum, mistakes_x_sum * learning_rate)
-
-
-        #print w.head(5)
 
         # update w
         for wi, wcol in enumerate(mistakes.columns):
@@ -261,8 +259,6 @@ def train_perceptron(data, predict, learning_rate):
 
         last_m = -1 * mistakes_x_sum
         ct_i += 1
-        #J = np.dot(w.transpose(), X)
-        #w_new = w
 
     print pd.DataFrame(J).head(5)
 
@@ -273,8 +269,8 @@ def q_3():
 
 
 def homework2():
-    q_1()
-    #q_2()
+    #q_1()
+    q_2()
     #q_3()
 
 

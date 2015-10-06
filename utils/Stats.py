@@ -165,12 +165,49 @@ def get_linreg_w(X, Y):
     w = np.dot(w_pre, Y)
     return w
 
+def get_linridge_w(X_uncentered, Y):
+    """ Linear ridge
+    X: dataframe of x1, x2, x..., xn
+    Y: array of y
+    return: w as matrix """
+    Xdict = {}
+    for index, row in X_uncentered.iterrows():
+        print row
+        x_bar = row.mean()
+        Xdict[index] = []
+        for col in row:
+            Xdict[index].append(col - x_bar)
+
+    Xt = pd.DataFrame(Xdict)
+
+    X = Xt.transpose()
+    #w_den = np.mat(Xt) * np.mat(X)
+    w_den = np.dot(Xt, X)
+    #w_pre = np.mat(utils.matrix_inverse(w_den)) * np.mat(Xt)
+    #print w_den
+    w_pre = np.dot(utils.matrix_inverse(w_den), Xt)
+    #w = np.mat(list(Y)) * np.mat(w_pre)
+    w = np.dot(w_pre, Y)
+    return w
+
 def linear_regression_points(X_old, Y):
     #print Y
     Y_fit = []
     X = pd.DataFrame(X_old.copy())
     X['b'] = np.ones(len(X))
     w = get_linreg_w(X, Y)
+    print 'w is: '
+    print w
+    for i, col in enumerate(X.columns):
+        Y_fit.append(w[i] * X[col])
+    return Y_fit
+
+def linear_ridge_points(X_old, Y):
+    #print Y
+    Y_fit = []
+    X = pd.DataFrame(X_old.copy())
+    X['b'] = np.ones(len(X))
+    w = get_linridge_w(X, Y)
     print 'w is: '
     print w
     for i, col in enumerate(X.columns):
@@ -202,6 +239,12 @@ def get_error(predict, truth, is_binary):
         print train
     return folds
     """
+
+def log_likelihood(array):
+    p = 1
+    for i in range(0,len(array)):
+        p *= array[i]
+    return np.log(p)
 
 def init_w(size):
     df = pd.DataFrame(np.random.random(size))
