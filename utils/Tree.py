@@ -2,8 +2,8 @@ __author__ = 'Allison MacLeay'
 
 import numpy as np
 import pandas as pd
-import utils.Stats as mystats
-import utils
+import CS6140_A_MacLeay.utils.Stats as mystats
+import CS6140_A_MacLeay.utils as utils
 
 def compute_info_gain(df, feature, split, y):
     A = df[[feature, y]]
@@ -24,25 +24,34 @@ def compute_info_gain_regression(df, feature, split, y):
     mask = A[feature] <= split
     B = A[mask]
     C = A[~mask]
-    info_gain = mystats.least_squares(A, y) - mystats.least_squares(B, y) + mystats.least_squares(C, y)
+    info_gain = mystats.least_squares(A, y) - mystats.least_squares(B, y) - mystats.least_squares(C, y)
     print 'Information Gain: %s' % info_gain
     return info_gain
 
 
+def compute_mse_regression(df, feature, split, y):
+    A = df[[feature, y]]
+    #series = [split for x in range(0, len(A[feature]))]
+    #print series
+    mask = A[feature] <= split
+    B = A[mask]
+    C = A[~mask]
+    #mse = mystats.mse(A, y) - mystats.mse(B, y) - mystats.mse(C, y)
+    mse = mystats.mse(B, y) + mystats.mse(C, y)
+    print 'delta MSE: ' + str(mse)
+    return mse
+
 def find_best_label_new(df, col, y):
+    #print df[col]
     values = set(df[col])
-    print 'vlen: ' + str(len(values))
     mse = {}
-    mu = utils.average(df[y])
     for v in values:
         mask = df[col] <= v
         if len(df[mask]) > 0 and len(df[mask]) < len(df):
-            mse[v] = mystats.compute_MSE(mu, list(df[mask][col]))
+            mse[v] = mystats.compute_combined_MSE(list(df[mask][y]), list(df[~mask][y]))
+    #print 'MSE ' + str(mse)
     lkey = min(mse, key=lambda k: mse[k])
-    print lkey
-    mask = df[col]
-    print 'mask len: ' + str(mse[lkey]) +' '+ str(len(mask)) + ' ' + str(len(df))
-    return lkey
+    return lkey, mse[lkey]
 
 
 def find_best_label(df, col, y):
@@ -107,47 +116,55 @@ def find_best_label_regression(df_old, col, y):
 
 
 def find_best_feature_and_label_for_split(df_full, y, regression):
-    # TODO - skip columns with only 1 value
     search_cols = []
     for col in df_full.columns:
         if len(df_full[col].unique()) > 1 and col is not y:
             search_cols.append(col)
-    if len(search_cols) < 2:
+    #print search_cols
+    if len(search_cols) < 1:
         return None, None
     df = df_full[search_cols]
     df[y] = df_full[y]
     if len(df) < 3:
         return None, None
     info_gain = pd.DataFrame(np.zeros(len(search_cols)), index=search_cols, columns=['IG'])
-    #print info_gain
+
     labels = {}
+    lowest_mse = None
+    lowest_col = None
     for col in search_cols:
-        #if col is y:
-        #    continue
-        #print 'Col is ' + col
-        #print df[col].describe()
         if len(df[col].unique()) < 2:
-            #pass
             print 'Warning: column {} has less than 2 unique values'.format(col)
             continue
         if regression:
-            #label = find_best_label_regression(df, col, y)
-            label = find_best_label_new(df, col, y)
-            print ' Label: ' + str(label)
+            label, mse = find_best_label_new(df, col, y)
+            #print 'MSE ' + col + ' ' + str(mse)
+            if lowest_mse is None or mse < lowest_mse:
+                lowest_mse = mse
+                lowest_col = col
         else:
-            #label = find_best_label(df, col, y)
-            label = find_best_label_new(df, col, y)
+            label = find_best_label(df, col, y)
+            #label, mse = find_best_label_new(df, col, y)
             #label = find_best_label_regression(df, col, y)
         labels[col] = label
         if not regression:
-            info_gain[col] = compute_info_gain(df, col, label, y)
+            info_gain['IG'][col] = compute_info_gain(df, col, label, y)
         else:
-            info_gain[col] = compute_info_gain_regression(df, col, label, y)
-    best_col = info_gain['IG'].idxmax()
+            info_gain['IG'][col] = compute_info_gain_regression(df, col, label, y)
+            #info_gain['IG'][col] = compute_mse_regression(df, col, label, y)
+    if not regression:
+        best_col = info_gain['IG'].idxmax()
+    else:
+        #print 'lowest_col'
+        best_col = lowest_col
+        #print labels[lowest_col]
 
-    print best_col
-    print info_gain[best_col]
-    if info_gain[best_col] is 0:
+    #print 'info_gain'
+    #print info_gain
+
+    #print best_col
+    #print info_gain['IG'][best_col]
+    if info_gain['IG'][best_col] is 0:
         best_col = None
 
     return best_col, labels[best_col]
@@ -242,6 +259,7 @@ class Tree(object):
         self.size = len(head_node.presence)
         self.load_nodes(head_node, nodes)
         print nodes
+        self.nodes = nodes
 
     def load_nodes(self, node, data):
         key = node.level
@@ -261,6 +279,7 @@ class Tree(object):
 
     def print_leaves_test(self):
         for leaf in self.leaves:
+            print 'parent label: {}'.format(leaf.parent.label['criteria'])
             print 'predict {} with testing error = {}'.format(str(leaf.predict), str(leaf.test_error))
 
 
@@ -281,6 +300,8 @@ class Tree(object):
         predict_obj = np.zeros(self.size)
         for leaf in self.leaves:
             predict = leaf.predict
+            print predict_obj
+            print predict
             for i in range(0, len(leaf.presence)):
                 if leaf.presence[i] == 1:
                     if predict_obj[i] != 0:
@@ -288,3 +309,17 @@ class Tree(object):
                     predict_obj[i] = predict
 
         return predict_obj
+
+    def print_tree(self, df, long=True):
+        for i in range(0, len(self.nodes)):
+            level_str = 'Level {}:'.format(i)
+            for node in self.nodes[i]:
+                data_str = ''
+                if long:
+                    data_str = '  ' + ','.join([str(x) for x in node.presence])
+                if node.label['feature'] is not '' and long:
+                    data_str += '  ' + ', '.join([str(x) for x in df[node.label['feature']]])
+                if node.predict is not None:
+                    data_str += ' predict: ' + str(node.predict)
+                level_str += '\t' + node.get_print_info() + data_str
+            print level_str

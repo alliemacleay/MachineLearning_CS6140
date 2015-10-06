@@ -3,6 +3,11 @@ __author__ = 'Allison MacLeay'
 import pandas as pd
 import numpy as np
 import os
+import random
+# import CS6140_A_MacLeay.utils
+# import CS6140_A_MacLeay.utils.Stats as mystats
+# import Stats as mystats
+import sys
 
 
 def load_and_normalize_housing_set():
@@ -11,9 +16,20 @@ def load_and_normalize_housing_set():
     train_file = "housing_train.txt"
     test = read_housing_file(os.path.join(path, test_file))
     train = read_housing_file(os.path.join(path, train_file))
-    test = normalize_data(test, 'MEDV')  # TODO - normalize test and train together
-    train = normalize_data(train, 'MEDV')
+    train, test = normalize_train_and_test(train, test, 'MEDV')
     return test, train
+
+def load_perceptron_data():
+    path = 'data'
+    perceptron_file = 'perceptronData.txt'
+    os.system('pwd')
+    data = read_perceptron_file(os.path.join(path, perceptron_file))
+    return split_test_and_train(data)
+
+def train_subset(df, cols, n=10):
+    """" Return a subset of data for debugging """
+    sample = random.sample(df.index, n)
+    return df.ix[sample][cols].reset_index(drop=True)
 
 
 def load_and_normalize_spam_data():
@@ -22,7 +38,7 @@ def load_and_normalize_spam_data():
     spamData = normalize_data(spamData, 'is_spam')
     return spamData
 
-def split_test_and_train(df, percent=.2):
+def split_test_and_train(df, percent=.2, norepeat=True):
     # Alternatively can use the following
     # from sklearn.cross_validation import train_test_split
     # train, test = train_test_split(df, test_size = 0.2)
@@ -30,6 +46,14 @@ def split_test_and_train(df, percent=.2):
     # msk = np.random.rand(len(df)) < 0.8
     number_in_test = len(df) * percent
     test_indeces = np.random.random_integers(len(df)-1, size=(1., number_in_test))[0]
+    print 'length of test indeces {} set {}'.format(len(test_indeces), len(set(test_indeces)))
+
+    if norepeat:
+        diff = len(test_indeces) - len(set(test_indeces))
+        while diff != 0:
+            test_indeces = np.append(np.array(list(set(test_indeces))), np.random.random_integers(len(df), size=(1., diff))[0])
+            diff = len(test_indeces) - len(set(test_indeces))
+
     msk = []
     for i in range(0, len(df)):
         if i in test_indeces:
@@ -41,6 +65,16 @@ def split_test_and_train(df, percent=.2):
     train = df[~msk]
     return test, train
 
+
+def shift_and_scale(df, predict):
+    for col in df.axes[1]:
+        if col is predict:
+            continue
+        df[col] = [float(x) for x in df[col]]
+        mean = average(df[col])
+        df[col] -= mean
+        df[col] = df[col]/df[col].max()
+        return df
 
 
 def normalize_data(df, predict):
@@ -54,11 +88,38 @@ def normalize_data(df, predict):
         df[col] = df[col]/(max-min)
     return df
 
+def normalize_train_and_test(train, test, predict):
+    # Will not normalize the column defined in 'predict'
+    tlen = len(train)
+    df = pd.concat([train, test])
+    #print test[0:5]
+    #print df[tlen:tlen+10]
+    #sys.exit()
+    for col in df.axes[1]:
+        if col is predict:
+            continue
+        min = df[col].min()
+        df[col] = df[col] - min
+        max = df[col].max()
+        df[col] = df[col]/(max-min)
+    df_train = df[0:tlen]
+    df_test = df[tlen:]
+    print 'train length out: ' + str(len(df_train)) + ' = ' + str(len(train))
+    print 'test length out: ' + str(len(df_test)) + ' = ' + str(len(test))
+    return df_train, df_test
+
 def read_housing_file(f):
     df = read_file(f)
-    cols = ['CRIM','ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'MEDV']
+    cols = ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'MEDV']
     df = df.transpose()
     df.columns = cols
+    return df
+
+def read_perceptron_file(f):
+    df = read_file(f)
+    df = df.transpose()
+    #print df[0]  # columns
+    #print df[:][0]  # rows
     return df
 
 
@@ -100,3 +161,25 @@ def matrix_inverse(matrix):
 
 def average(arr):
     return float(sum(arr))/len(arr)
+
+def scale(arr, s_min, s_max):
+    s_range = s_max - s_min
+    a_min = min(arr)
+    a_range = max(arr) - a_min
+    n_array = []
+    for a in arr:
+        n_array.append((a - a_min) * s_range/a_range + s_min)
+    return n_array
+
+def check_binary(arr):
+    is_binary = False
+    if arr.unique < 3:
+        is_binary = True
+    return is_binary
+
+#def get_error(predict, truth, is_binary):
+#    if is_binary:
+#        error = mystats.compute_ACC(predict, truth)
+#    else:
+#        error = mystats.compute_MSE_arrays(predict, truth)
+#    return error

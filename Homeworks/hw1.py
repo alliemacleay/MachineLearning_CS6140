@@ -5,10 +5,10 @@ from sklearn import tree
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
 import scipy as sp
-import utils
-import utils.Stats as mystats
-import utils.plots as myplot
-import utils.Tree as mytree
+import CS6140_A_MacLeay.utils as utils
+import CS6140_A_MacLeay.utils.Stats as mystats
+import CS6140_A_MacLeay.utils.plots as myplot
+import CS6140_A_MacLeay.utils.Tree as mytree
 import sys
 
 
@@ -86,7 +86,7 @@ def decision_spambase_set_no_libs():
     print str(len(train)) + " # in training set <--> # in test " + str(len(test))
 
     node = mytree.Node(np.ones(len(train)))
-    branch_node(node, train, 8, 'is_spam')
+    branch_node(node, train, 5, 'is_spam')
     #node.show_children_tree()
     node.show_children_tree(follow=False)
 
@@ -104,7 +104,8 @@ def decision_spambase_set_no_libs():
 
     [tp, tn, fp, fn] = mystats.get_performance_stats(test['is_spam'].as_matrix(), prediction)
     print 'TP: {}\tFP: {}\nTN: {}\tFN: {}'.format(tp, fp, tn, fn)
-    print str(mystats.compute_accuracy(tp,tn, fp,fn))
+    print 'Accuracy: ' + str(mystats.compute_accuracy(tp,tn, fp,fn))
+    print 'MSE: ' + str(mystats.compute_MSE_arrays(prediction, test['is_spam']))
 
 def decision_housing_set_no_libs():
     """
@@ -113,29 +114,43 @@ def decision_housing_set_no_libs():
     print('Homework 1 problem 1 - No Libraries - Regression Decision tree')
     print('Housing Dataset')
     test, train = utils.load_and_normalize_housing_set()
+
+    # The following 2 lines are for debugging
+    #train = utils.train_subset(train, ['ZN','CRIM', 'TAX', 'DIS', 'MEDV'], n=50)
+    #test = utils.train_subset(test, ['ZN', 'CRIM', 'TAX', 'DIS', 'MEDV'], n=3)
+
     print str(len(train)) + " # in training set <--> # in test " + str(len(test))
     node = mytree.Node(np.ones(len(train)))
-    branch_node(node, train, 3, 'MEDV', regression=True)
+    branch_node(node, train, 2, 'MEDV', regression=True)
     #node.show_children_tree()
     node.show_children_tree(follow=False)
 
     model = mytree.Tree(node)
     model.print_leaves()
+    model.print_tree(train)
     print 'Trained model error is : ' + str(model.error())
+    train_prediction = model.predict_obj()
+    print 'Training MSE is: ' + str(mystats.compute_MSE_arrays(train_prediction, train['MEDV']))
+    sys.exit()
 
     node.presence = np.ones(len(test))
     test_node(node, test, 'MEDV', regression=True)
     test_tree = mytree.Tree(node)
     prediction = test_tree.predict_obj()
-    raw_input()
+    #raw_input()
     print 'predict sum: ' + str(sum(prediction))
     test_tree.print_leaves_test()
     print 'ERROR: ' + str(test_tree.error_test())
     print prediction
+    print 'train'
+    print train['MEDV']
+    print 'test'
     print test['MEDV']
     MSE = mystats.compute_MSE_arrays(prediction, test['MEDV'])
     print 'MSE: ' + str(MSE)
     print 'RMSE: ' + str(np.sqrt(MSE))
+
+    test_tree.print_tree(test, long=False)
 
     #[tp, tn, fp, fn] = mystats.get_performance_stats(test['MEDV'].as_matrix(), prediction)
     #print 'TP: {}\tFP: {}\nTN: {}\tFN: {}'.format(tp, fp, tn, fn)

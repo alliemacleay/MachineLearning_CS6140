@@ -2,7 +2,8 @@ __author__ = 'Allison MacLeay'
 import numpy as np
 import pandas as pd
 import sys
-import utils
+#import CS6140_A_MacLeay.utils as utils
+from CS6140_A_MacLeay import utils
 
 from sklearn.cross_validation import KFold
 
@@ -11,19 +12,20 @@ def compute_accuracy(tp, tn, fp, fn):
     return float(tp+tn)/(tn+tp+fp+fn)
 
 def compute_ACC(predicted, observed):
-    #TO DO - fix this implementation
-    chi_sq_errors = calculate_chisq_error(predicted, observed)
-    return chi_sq_errors
+    [tp, tn, fp, fn] = get_performance_stats(predicted, observed)
+    return compute_accuracy(tp, tn, fp, fn)
 
 def compute_MSE_arrays(predicted, observed):
     T = len(observed)
+    if T != len(predicted):
+        print 'WARNING: len(o) {} is not equal to len(p) {}'.format(T, len(predicted))
     observed = list(observed)
     sig = 0
     if T == 0:
         return 0
     for i, p in enumerate(predicted):
         sig += (p-observed[i])**2
-    return sig/T
+    return float(sig)/T
 
 def compute_MSE(predicted, observed):
     """ predicted is scalar and observed as array"""
@@ -33,6 +35,29 @@ def compute_MSE(predicted, observed):
     for o in observed:
         err += (predicted - o)**2/predicted
     return err/len(observed)
+
+def compute_combined_MSE(A, B):
+    """ """
+    if len(A) == 0:
+        return 0
+    muA = utils.average(A)
+    muB = utils.average(B)
+    if muA == 0:
+        muA += .000000001
+    if muB == 0:
+        muB += .000000001
+    total = 0
+    total += compute_MSE(muA, A)
+    total += compute_MSE(muB, B)
+
+    return total
+
+def mse(df, col):
+    mu = utils.average(df[col])
+    sig = 0
+    for i in df[col]:
+        sig += (i-mu)**2
+    return float(sig)/len(df[col])
 
 def calculate_chisq_error(pred, truth):
     """ (E-O)^2/E """
@@ -162,6 +187,13 @@ def k_folds(df, k):
     kf = KFold(len(df), n_folds=k)
     return kf
 
+def get_error(predict, truth, is_binary):
+    if is_binary:
+        error = compute_ACC(predict, truth)
+    else:
+        error = compute_MSE_arrays(predict, truth)
+    return error
+
     ######################
     """
     for train, test in kf:
@@ -171,7 +203,9 @@ def k_folds(df, k):
     return folds
     """
 
-
+def init_w(size):
+    df = pd.DataFrame(np.random.random(size))
+    return df.reindex()
 
 
 

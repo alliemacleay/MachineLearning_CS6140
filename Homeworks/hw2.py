@@ -2,11 +2,11 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
 import scipy as sp
-import utils
-import utils.Stats as mystats
+import CS6140_A_MacLeay.utils as utils
+import CS6140_A_MacLeay.utils.Stats as mystats
 
 
-__author__ = 'Admin'
+__author__ = 'Allison MacLeay'
 
 
 def compute_cost(x, y, delta):
