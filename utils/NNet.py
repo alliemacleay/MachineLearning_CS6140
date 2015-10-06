@@ -34,6 +34,45 @@ wji[8, 3]
 wkj[3, 8]
 
 """
+
+class NeuralNet():
+
+    def __init__(self):
+        self.wji, self.wkj = init_apx()
+        self.inputs, self.hiddens, self.outputs = init_nnet()
+
+    def get_wlayer_i(self, layer, i):
+        if layer == 0:
+            return self.get_wi(i)
+        else:
+            return self.get_wj(i)
+
+    def get_wj(self, i):
+        return self.wkj[i]
+
+
+    def get_wi(self, j):
+        arr = []
+        for k in self.wji.keys():
+            arr.append(self.wji[k][j])
+        return arr
+
+    def get_output(self, layer, i):
+        output = []
+        if layer == 0:
+            # hidden
+            output = self.hiddens[i]
+        else:
+            # final output
+            output = self.outputs[i]
+        return output
+
+    def get_tuple(self, i):
+        check_it(self.inputs, self.hiddens, self.outputs)
+        return self.inputs[i], self.hiddens[i], self.outputs[i]
+
+
+
 def init_nnet():
     # initialize inputs (x)
     zeros = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -93,7 +132,7 @@ def init_apx():
 
 
 def random_array(start, end, size):
-    step = (end - start) / size
+    step = float(end - start) / size
     arr = []
     for i in range(0, size):
         arr.append(start + step * i)
@@ -101,44 +140,44 @@ def random_array(start, end, size):
 
 
 def init_theta(size):
+    # theta should be 0 to start #TODO verify this
     arr = []
     for i in range(0, size):
-        arr.append(1)
+        arr.append(0)
     return arr
 
 
-def get_tuple(inputs, hiddens, outputs, i):
-    check_it(inputs, hiddens, outputs)
-    return inputs[i], hiddens[i], outputs[i]
-
-
-def get_wj(wkj, i):
-    return wkj[i]
-
-
-def get_wi(wji, j):
-    arr = []
-    for k in wji.keys():
-        arr.append(wji[k][j])
-    return arr
-
-def run_all(inputs, hiddens, outputs, num):
+def run_all(inputs, hiddens, outputs, num):  # num is just for testing.  should iterate through entire set
     # run NNet for num examples in training set
+    layers = 2  # I will iterate through layers using layer
+    nn = NeuralNet()
     wji_apx, wkj_apx = init_apx()
     theta = init_theta(num)
     sum_j = {}
     for i in range(0, num):
-        input, hidden, output = get_tuple(inputs, hiddens, outputs, i)
-        O = input
-        wji, wkj = init_apx()
-        wi = get_wi(wji, i)  # this should return 8 weights
-        print 'wi is {} length hidden is {}'.format(wi, len(hidden))
-        sum_j[i] = 0
-        for j in range(0, len(hidden)):
-            sum_j[i] += wi[i] * O[j]
+        #input, hidden, output = get_tuple(inputs, hiddens, outputs, i)
+        input, hidden, output = nn.get_tuple(i)
 
-        print 'i is {}'.format(i)
-        print sum_j
+        # This should happen for the entire set before this
+        #wji, wkj = init_apx()
+
+        for layer in range(layers):
+            # propogate inputs forward
+            O = nn.get_output(layer, i)
+            wlayer = nn.get_wlayer_i(layer, i)  # this should return 8 weights
+            print 'wi is {} length hidden is {}'.format(wlayer, len(hidden))
+            for j in range(len(hidden)):
+                print 'hidden: ' + str(hidden[j])
+                print '{} * {}'.format(wlayer[j], O[j])
+                #input[i] =
+            sum_j[i] = 0
+
+            # iterate through hidden layer
+            for j in range(0, len(hidden)):
+                sum_j[i] += wlayer[i] * O[j]
+
+            print 'i is {}'.format(i)
+            print sum_j
 
 def run():
     inputs, hiddens, outputs = init_nnet()
