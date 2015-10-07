@@ -38,8 +38,10 @@ def xgradient(X, Y, w_old, gd_lambda, descent=True, epsilon_accepted=5, max_iter
         w_new = gradient(X, Y, w_new, gd_lambda, descent, epsilon_accepted)
     return w_new
 
+def to_col_vec(x):
+    return x.reshape((len(x), 1))
 
-def gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.005, max_iterations=10000000):
+def gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=1e-6, max_iterations=1000):
     accepted = False
     iterations = 0
     epsilon = 1
@@ -47,24 +49,22 @@ def gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.005, max_iteration
     x = X.transpose()
     m = X.shape[1]  # number of cols
     print 'sh0: {} len(X): {}'.format(m, len(X))
-    w_old = pd.DataFrame(np.zeros(m))
+    w_old = np.zeros(m)
     while not accepted:
-        h = np.dot(X, w_old)
-        loss = [h[i] - list(Y)[i] for i in range(0, len(h))]
-        print 'loss {}'.format(loss)
-        MSE = sum([loss[i] ** 2 for i in range(0, len(loss))])/len(loss)
-        print 'MSE {}'.format(MSE)
-        diff = np.dot(X.transpose(), loss) / len(loss)
+        #h = np.dot(X, w_old)
+        #loss = [h[i] - list(Y)[i] for i in range(0, len(h))]
+        #print 'loss {}'.format(loss)
+        #MSE = sum([loss[i] ** 2 for i in range(0, len(loss))])/len(loss)
+        #print 'MSE {}'.format(MSE)
+        #diff = np.dot(X.transpose(), loss) / len(loss)
+        diff = np.dot(np.dot(X.T, X), to_col_vec(w_old)) - np.dot(X.T, to_col_vec(Y))
         print 'diff {}'.format(diff)
-        w_new = w_old - gd_lambda * diff
-        print w_new
+        w_new = w_old - gd_lambda * diff.ravel()
         #epsilon = abs(sum(w_new - w_old)/len(w_new))
-        epsilon = sum(w_new - w_old)/len(w_new)
+        epsilon = sum(np.abs(w_new - w_old))/len(w_new)
         print 'epsilon: {}'.format(epsilon)
-        print 'X and w:'
-        print X['b']
-        print w_new[:]
-        print 'ova'
+        print 'w:'
+        print '{} iterations, w: {}'.format(iterations, w_new[:])
         w_old = w_new
         if epsilon < epsilon_accepted:
             accepted = True

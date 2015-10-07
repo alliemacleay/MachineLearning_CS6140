@@ -1,7 +1,11 @@
 __author__ = 'Allison MacLeay'
 
 from copy import deepcopy
+
 import numpy as np
+
+import CS6140_A_MacLeay.utils.NNet_5 as N5
+
 
 """
 Neural Network
@@ -38,14 +42,25 @@ wkj[3, 8]
 class NeuralNet():
 
     def __init__(self):
+        """
+
+        :rtype : object
+        """
         self.wji, self.wkj = init_apx()
         self.inputs, self.hiddens, self.outputs = init_nnet()
+        self.learning_rate = .0005
 
     def get_wlayer_i(self, layer, i):
         if layer == 0:
             return self.get_wi(i)
         else:
             return self.get_wj(i)
+
+    def get_wlayer(self, layer):
+        if layer == 0:
+            return self.wji
+        else:
+            return self.wkj
 
     def get_wj(self, i):
         return self.wkj[i]
@@ -66,6 +81,22 @@ class NeuralNet():
             # final output
             output = self.outputs[i]
         return output
+
+    def xget_tuple(self, i, j):
+        """
+        i(0-7) j(0-2) i(0-7)
+        """
+        check_it(self.inputs, self.hiddens, self.outputs)
+        return self.inputs[i], self.hiddens[i], self.outputs[i]
+
+    def update_weights(self, E, O):
+        lwji = len(self.wji)
+        lwkj = len(self.wkj)
+        #for i in range(lwji):
+        #    for k in range(lwkj):
+        #        delta_ji = self.learning_rate * E[i] * O[k]
+
+
 
     def get_tuple(self, i):
         check_it(self.inputs, self.hiddens, self.outputs)
@@ -152,36 +183,91 @@ def run_all(inputs, hiddens, outputs, num):  # num is just for testing.  should 
     layers = 2  # I will iterate through layers using layer
     nn = NeuralNet()
     wji_apx, wkj_apx = init_apx()
-    theta = init_theta(num)
+    theta = init_theta(layers)
     sum_j = {}
-    for i in range(0, num):
+
+    #for i in range(0, num):
+    for i in [0]:
         #input, hidden, output = get_tuple(inputs, hiddens, outputs, i)
+        #input = []
         input, hidden, output = nn.get_tuple(i)
+
 
         # This should happen for the entire set before this
         #wji, wkj = init_apx()
 
+        # initialize error matrix
+        err = []
+        for i in range(layers):
+            err.append(0)
+
         for layer in range(layers):
             # propogate inputs forward
-            O = nn.get_output(layer, i)
-            wlayer = nn.get_wlayer_i(layer, i)  # this should return 8 weights
-            print 'wi is {} length hidden is {}'.format(wlayer, len(hidden))
-            for j in range(len(hidden)):
-                print 'hidden: ' + str(hidden[j])
-                print '{} * {}'.format(wlayer[j], O[j])
-                #input[i] =
-            sum_j[i] = 0
+            O = nn.get_output(layer, i)[:]  # returns 3 for i=0 and 8 for i=1
 
-            # iterate through hidden layer
-            for j in range(0, len(hidden)):
-                sum_j[i] += wlayer[i] * O[j]
+            T = O[:]  #  target
+            print 'length of O is {} hiddens[0] {}'.format(len(O), len(nn.hiddens[0]))
+            wlayer = nn.get_wlayer(layer)  # this should return 8 weights for i=0
+            o_length = len(O)
+            for append_i in range(len(O), len(wlayer)):
+                O.append(0)
+            print 'wlayer is {} length wlayer is {}'.format(wlayer, len(wlayer))
+            for j in range(len(wlayer)):
+                wj = wlayer[j]
+                sumk = 0
+                for k in range(o_length):
+                    print 'counter {}: {} += {} * {}'.format(k, sumk, O[k], wlayer[j][k])
+                    sumk += O[k] * wlayer[j][k]
+                input[j] = sumk + theta[layer]
+                O[j] = float(1)/(1 + np.exp(-input[j]))
+            err[layer] = []
+            for j in range(o_length):
+                print 'J IS {}'.format(j)
+                err[layer].append(O[j] * (1-O[j]) * (T[j] - O[j]))
+                layer_ct = layer + 1
+                sum_layer = 0
+                while layers + 1 > layer_ct < len(err):
+                    if err[layer_ct] > 0:
+                        weights = nn.get_wlayer(layer_ct)
+                        for w_ct in range(len(weights)):
+                            sum_layer += err[layer_ct] * weights[w_ct][j]
+                    layer_ct += 1
 
-            print 'i is {}'.format(i)
-            print sum_j
+                if sum_layer != 0:
+                    err[layer] = O[j] * (1 - O[j]) * sum_layer
+
+                #print 'layer {} new Oj = {}'.format(layer, O[j])
+
+            print 'len O for layer=0 should be 8 layer {} len {}'.format(layer, len(O))
+            print err[layer]
+            print O
+        # Outside layer loop
+        nn.update_weights(err, O)
+
+def xrun_all():
+    layers = 2  # I will iterate through layers using layer
+    nn = NeuralNet()
+    wji_apx, wkj_apx = init_apx()
+    theta = init_theta(layers)
+    I = []
+    O = []
+    I[0] = nn.hiddens[0][0]
+
+    # For each training tuple
+    for j in range(layers):  # layer (0-1)
+        I = nn.get_inputs(layer)
+
+                #sum_i +=
+
+
 
 def run():
-    inputs, hiddens, outputs = init_nnet()
-    run_all(inputs, hiddens, outputs, 1)
+    #inputs, hiddens, outputs = init_nnet()
+    #run_all(inputs, hiddens, outputs, 1)
+    #N3.run()
+    #N2.run()
+    #N4.run_autoencoder()
+    N5.run()
 
 
 

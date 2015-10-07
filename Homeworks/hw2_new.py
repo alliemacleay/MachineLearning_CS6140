@@ -159,6 +159,7 @@ def q_1():
     h_results.append(linear_reg(h_train, h_test, 'MEDV'))
     h_results.append(linear_ridge(h_train, h_test, 'MEDV'))
     h_results.append(linear_gd(h_train, h_test, 'MEDV'))
+    #h_results.append(linear_gd(h_train, h_test, 'MEDV'))
     h_results.append(logistic_gd(h_train, h_test, 'MEDV'))
 
     s_test, s_train = utils.split_test_and_train(utils.load_and_normalize_spam_data())
@@ -175,12 +176,12 @@ def q_2():
     test, train = utils.load_perceptron_data()
     print test[4]
     print train.head(5)
-    model = perc.Perceptron(train, 4, .0005, 3)
-    print model.model
-    print 'Training error'
-    model.print_score()
-    print 'Testing error'
-    model.print_score(model.get_score(model.get_predicted(test), test[4]))
+    model = perc.Perceptron(train, 4, .05, 100)
+    #print model.model
+    #print 'Training error'
+    #model.print_score()
+    #print 'Testing error'
+    #model.print_score(model.get_score(model.get_predicted(test), test[4]))
 
 
 def q_3():
@@ -189,9 +190,9 @@ def q_3():
 
 
 def homework2():
-    #q_1()
+    q_1()
     #q_2()
-    q_3()
+    #q_3()
 
 
 if __name__ =='__main__':

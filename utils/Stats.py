@@ -165,7 +165,7 @@ def get_linreg_w(X, Y):
     w = np.dot(w_pre, Y)
     return w
 
-def get_linridge_w(X_uncentered, Y):
+def get_linridge_w(X_uncentered, Y, learning_rate):
     """ Linear ridge
     X: dataframe of x1, x2, x..., xn
     Y: array of y
@@ -181,12 +181,9 @@ def get_linridge_w(X_uncentered, Y):
     Xt = pd.DataFrame(Xdict)
 
     X = Xt.transpose()
-    #w_den = np.mat(Xt) * np.mat(X)
-    w_den = np.dot(Xt, X)
-    #w_pre = np.mat(utils.matrix_inverse(w_den)) * np.mat(Xt)
-    #print w_den
+    I = np.identity(X.shape[1])
+    w_den = np.dot(Xt, X) + np.dot(learning_rate, I)
     w_pre = np.dot(utils.matrix_inverse(w_den), Xt)
-    #w = np.mat(list(Y)) * np.mat(w_pre)
     w = np.dot(w_pre, Y)
     return w
 
@@ -202,12 +199,12 @@ def linear_regression_points(X_old, Y):
         Y_fit.append(w[i] * X[col])
     return Y_fit
 
-def linear_ridge_points(X_old, Y):
+def linear_ridge_points(X_old, Y, learning_rate=.05):
     #print Y
     Y_fit = []
     X = pd.DataFrame(X_old.copy())
     X['b'] = np.ones(len(X))
-    w = get_linridge_w(X, Y)
+    w = get_linridge_w(X, Y, learning_rate)
     print 'w is: '
     print w
     for i, col in enumerate(X.columns):
