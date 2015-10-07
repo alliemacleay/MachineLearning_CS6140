@@ -60,6 +60,8 @@ def gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=1e-6, max_iteration
         diff = np.dot(np.dot(X.T, X), to_col_vec(w_old)) - np.dot(X.T, to_col_vec(Y))
         print 'diff {}'.format(diff)
         w_new = w_old - gd_lambda * diff.ravel()
+        if np.any(np.isnan(w_new)):
+            raise ValueError('NAN is found on iteration {}'.format(iterations))
         #epsilon = abs(sum(w_new - w_old)/len(w_new))
         epsilon = sum(np.abs(w_new - w_old))/len(w_new)
         print 'epsilon: {}'.format(epsilon)
@@ -129,10 +131,16 @@ def get_slope_intercept(model, truth_set, binary=False):
     return average(slopes), average(intercepts)
 
 
-def predict(df, model):
+def predict(df, model, binary=False):
     if 'b' not in df.columns:
         df['b'] = 1
     predictions = np.dot(df, model)
+    if binary:
+        for p in range(len(predictions)):
+            if predictions[p] < .5:
+                predictions[p] = 0
+            else:
+                predictions[p] = 1
     return predictions
 
 

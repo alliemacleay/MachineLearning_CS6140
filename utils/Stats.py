@@ -36,6 +36,19 @@ def compute_MSE(predicted, observed):
         err += (predicted - o)**2/predicted
     return err/len(observed)
 
+def predict(df, model, binary=False):
+    #if 'b' not in df.columns:
+    #    df['b'] = 1
+    #model = np.append(model,1)
+    predictions = np.dot(df, model)
+    if binary:
+        for p in range(len(predictions)):
+            if predictions[p] < .5:
+                predictions[p] = 0
+            else:
+                predictions[p] = 1
+    return predictions
+
 def compute_combined_MSE(A, B):
     """ """
     if len(A) == 0:
@@ -222,6 +235,8 @@ def k_folds(df, k):
     return kf
 
 def get_error(predict, truth, is_binary):
+    truth = np.array(truth)
+    predict = np.array(predict)
     if is_binary:
         error = compute_ACC(predict, truth)
     else:

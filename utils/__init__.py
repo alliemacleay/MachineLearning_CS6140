@@ -94,23 +94,21 @@ def normalize_data(df, predict):
         min = df[col].min()
         df[col] = df[col] - min
         max = df[col].max()
-        df[col] = df[col]/(max-min)
+        df[col] = df[col]/max
     return df
 
-def normalize_train_and_test(train, test, predict):
-    # Will not normalize the column defined in 'predict'
+def normalize_train_and_test(train, test, skip):
+    # Will not normalize the column defined in 'skip'
+    #   norm(x[col]) = ( X - min(X) ) / ( max(X) - min(X) )
     tlen = len(train)
     df = pd.concat([train, test])
-    #print test[0:5]
-    #print df[tlen:tlen+10]
-    #sys.exit()
     for col in df.axes[1]:
-        if col is predict:
+        if col is skip:
             continue
         min = df[col].min()
         df[col] = df[col] - min
         max = df[col].max()
-        df[col] = df[col]/(max-min)
+        df[col] = df[col]/max
     df_train = df[0:tlen]
     df_test = df[tlen:]
     print 'train length out: ' + str(len(df_train)) + ' = ' + str(len(train))
@@ -164,6 +162,8 @@ def read_file(f, delim=None):
     df = pd.DataFrame(text, dtype=np.float)
     return df
 
+def to_col_vec(x):
+    return x.reshape((len(x), 1))
 
 def matrix_inverse(matrix):
     return np.linalg.inv(matrix)
@@ -182,7 +182,7 @@ def scale(arr, s_min, s_max):
 
 def check_binary(arr):
     is_binary = False
-    if arr.unique < 3:
+    if len(arr.unique()) < 3:
         is_binary = True
     return is_binary
 
