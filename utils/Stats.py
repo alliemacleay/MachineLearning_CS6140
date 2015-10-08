@@ -239,14 +239,6 @@ def get_error(predict, truth, is_binary):
         error = compute_MSE_arrays(predict, truth)
     return error
 
-    ######################
-    """
-    for train, test in kf:
-        print 'test and train'
-        print test
-        print train
-    return folds
-    """
 
 def log_likelihood(array):
     p = 1

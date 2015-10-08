@@ -34,7 +34,6 @@ def linear_reg_errors(df_train, df_test, Y, ridge=False, sigmoid=False):
     return [error_train, error_test]
 
 def linear_reg(df, Y, binary=False, ridge=False, sigmoid=False):
-    #columns = df[:-1]
     columns = [col for col in df.columns if (col != 'is_spam' and col != 'MEDV')]
     if ridge:
         w = mystats.get_linridge_w(df[columns], df[Y], binary)
@@ -62,17 +61,14 @@ def linear_gd(df_train, df_test, Y):
 def logistic_gd(df_train, df_test, Y):
     """ logistic gradient descent """
     binary = utils.check_binary(df_train[Y])
-    model = gd.logistic_gradient(df_train, df_train[Y], .0001, max_iterations=5000)
+    model = gd.logistic_gradient(df_train, df_train[Y], .1, max_iterations=5)
     print model
-    predict = gd.predict(df_train, model, binary)
+    predict = gd.predict(df_train, model, binary, True)
     print predict
     error_train = mystats.get_error(predict, df_train[Y], binary)
-    predict = gd.predict(df_test, model, binary)
+    predict = gd.predict(df_test, model, binary, True)
     print predict
     error_test = mystats.get_error(predict, df_test[Y], binary)
-    #TODO data in probabilities can't be negative
-    error_train = 0
-    error_test = 0
     return [error_train, error_test]
 
 def print_results_1(spam, housing):
@@ -108,18 +104,18 @@ def q_1():
     h_test, h_train = utils.load_and_normalize_housing_set()
     h_results = []
     s_results = []
-    #h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # works
-    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # works
-    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # works
-    #h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works
+    h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # works
+    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # works
+    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # works
+    h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works
     #h_results.append(logistic_gd(h_train, h_test, 'MEDV'))
 
     s_test, s_train = utils.split_test_and_train(utils.load_and_normalize_spam_data())
-    #s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works
-    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works
-    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works
-    #s_results.append(linear_gd(s_train, s_test, 'is_spam')) # works
-    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', sigmoid=True))
+    s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works
+    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works
+    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works
+    s_results.append(linear_gd(s_train, s_test, 'is_spam')) # works
+    s_results.append(logistic_gd(s_train, s_test, 'is_spam'))
     print_results_1(s_results, h_results)
 
 
@@ -129,12 +125,6 @@ def q_2():
     print test[4]
     print train.head(5)
     model = perc.Perceptron(train, 4, .05, 100)
-    #print model.model
-    #print 'Training error'
-    #model.print_score()
-    #print 'Testing error'
-    #model.print_score(model.get_score(model.get_predicted(test), test[4]))
-
 
 def q_3():
     print 'Run Neural Network for question 3 in homework 2'
