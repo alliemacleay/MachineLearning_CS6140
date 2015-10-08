@@ -36,7 +36,7 @@ def compute_MSE(predicted, observed):
         err += (predicted - o)**2/predicted
     return err/len(observed)
 
-def predict(df, model, binary=False):
+def predict(df, model, binary=False, sigmoid=False):
     #if 'b' not in df.columns:
     #    df['b'] = 1
     #model = np.append(model,1)
@@ -169,12 +169,8 @@ def get_linreg_w(X, Y):
     return: w as matrix """
     print X
     Xt = X.transpose()
-    #w_den = np.mat(Xt) * np.mat(X)
     w_den = np.dot(Xt, X)
-    #w_pre = np.mat(utils.matrix_inverse(w_den)) * np.mat(Xt)
-    #print w_den
     w_pre = np.dot(utils.matrix_inverse(w_den), Xt)
-    #w = np.mat(list(Y)) * np.mat(w_pre)
     w = np.dot(w_pre, Y)
     return w
 

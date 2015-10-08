@@ -26,42 +26,24 @@ def dec_or_reg_tree(df_train, df_test, Y):
     error_test = mystats.get_error(predict, df_test[Y], binary)
     return [error_train, error_test]
 
-def linear_reg(df_train, df_test, Y, ridge=False):
+
+def linear_reg_errors(df_train, df_test, Y, ridge=False, sigmoid=False):
     binary = utils.check_binary(df_train[Y])
-    columns = df_train.columns[:-1]
-    if ridge:
-        #Y_fit = mystats.linear_ridge_points(df_train[columns], df_train[Y])
-        w = mystats.get_linridge_w(df_train[columns], df_train[Y], binary)
-    else:
-        #Y_fit = mystats.linear_regression_points(df_train[columns], df_train[Y])
-        w = mystats.get_linreg_w(df_train[columns], df_train[Y])
-
-    #print 'Y_fit'
-    #print Y_fit
-    #for i in range(0, len(Y_fit)):
-    #    print str(Y_fit[i]) + ' -- ' + str(train['is_spam'][i])
-
-    #col_MSE = {}
-    #predict = []
-
-    #for i, col in enumerate(columns):
-    #    predict.append(Y_fit[i] + Y_fit[-1])
-    predict = mystats.predict(df_train[columns], w, binary)
-    #raw_input()
-    error_train = mystats.get_error(predict, df_train[Y], binary)
-    # TEST #
-    columns = df_test.columns[:-1]
-    if ridge:
-        #Y_fit = mystats.linear_ridge_points(df_test[columns], df_test[Y])
-        w = mystats.get_linridge_w(df_test[columns], df_test[Y], binary)
-    else:
-        #Y_fit = mystats.linear_regression_points(df_test[columns], df_test[Y])
-        w = mystats.get_linreg_w(df_test[columns], df_test[Y])
-
-
-    predict = mystats.predict(df_test[columns], w, binary)
-    error_test = mystats.get_error(predict, df_test[Y], binary)
+    error_train = linear_reg(df_train, Y, binary, ridge, sigmoid)
+    error_test = linear_reg(df_test, Y, binary, ridge, sigmoid)
     return [error_train, error_test]
+
+def linear_reg(df, Y, binary=False, ridge=False, sigmoid=False):
+    #columns = df[:-1]
+    columns = [col for col in df.columns if (col != 'is_spam' and col != 'MEDV')]
+    if ridge:
+        w = mystats.get_linridge_w(df[columns], df[Y], binary)
+    else:
+        w = mystats.get_linreg_w(df[columns], df[Y])
+
+    predict = mystats.predict(df[columns], w, binary)
+    error = mystats.get_error(predict, df[Y], binary)
+    return error
 
 
 def linear_gd(df_train, df_test, Y):
@@ -127,17 +109,17 @@ def q_1():
     h_results = []
     s_results = []
     #h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # works
-    #h_results.append(linear_reg(h_train, h_test, 'MEDV')) # works
-    #h_results.append(linear_reg(h_train, h_test, 'MEDV', True)) # works
+    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # works
+    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # works
     #h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works
     #h_results.append(logistic_gd(h_train, h_test, 'MEDV'))
 
     s_test, s_train = utils.split_test_and_train(utils.load_and_normalize_spam_data())
     #s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works
-    #s_results.append(linear_reg(s_train, s_test, 'is_spam')) # works
-    #s_results.append(linear_reg(s_train, s_test, 'is_spam', True)) # works
+    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works
+    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works
     #s_results.append(linear_gd(s_train, s_test, 'is_spam')) # works
-    s_results.append(logistic_gd(s_train, s_test, 'is_spam'))
+    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', sigmoid=True))
     print_results_1(s_results, h_results)
 
 

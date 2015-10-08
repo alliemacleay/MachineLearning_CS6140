@@ -186,6 +186,9 @@ def check_binary(arr):
         is_binary = True
     return is_binary
 
+def sigmoid(n):
+    return 1/(1+np.exp(-n))
+
 #def get_error(predict, truth, is_binary):
 #    if is_binary:
 #        error = mystats.compute_ACC(predict, truth)
