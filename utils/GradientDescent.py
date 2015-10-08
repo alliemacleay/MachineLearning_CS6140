@@ -75,7 +75,7 @@ def gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=1e-6, max_iteration
         iterations += 1
     return w_new
 
-def logistic_gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.8, max_iterations=10000000):
+def logistic_gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=1e-6, max_iterations=10000000):
     accepted = False
     iterations = 0
     epsilon = 1
@@ -85,12 +85,12 @@ def logistic_gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.8, max_it
     print 'sh0: {} len(X): {}'.format(m, len(X))
     w_old = pd.DataFrame(np.ones(m))
     #TODO these values can't be negative
-    return w_old
     while not accepted:
         h = abs(1/(1 - np.exp(np.dot(X, w_old))))
         probabilities = [h[i] **(list(Y)[i]) * (1 - h[i] ** (1 - list(Y)[i])) for i in range(0, len(h))]
         log_likelihood = mystats.log_likelihood(probabilities)
         print 'log_likelihood {}'.format(log_likelihood)
+        print list(Y) - h
         diff = gd_lambda * np.dot((Y - h), X)
         print 'diff {}'.format(diff)
         # gradient ascent
@@ -98,8 +98,8 @@ def logistic_gradient(X, Y, gd_lambda, descent=True, epsilon_accepted=.8, max_it
         print w_new
         #epsilon = abs(sum(w_new - w_old)/len(w_new))
         epsilon = sum(w_new - w_old)/len(w_new)
-        print 'epsilon: {}'.format(epsilon)
-        print w_new[:]
+        print 'iteration: {} epsilon: {}'.format(iterations, epsilon)
+        #print w_new[:]
         w_old = w_new
         if epsilon < epsilon_accepted:
             accepted = True
