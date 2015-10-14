@@ -25,7 +25,7 @@ def load_and_normalize_housing_set():
     train_file = "housing_train.txt"
     test = read_housing_file(os.path.join(path, test_file))
     train = read_housing_file(os.path.join(path, train_file))
-    train, test = normalize_train_and_test(train, test, '')
+    train, test = normalize_train_and_test(train, test, 'MEDV')
     return test, train
 
 def load_perceptron_data():
@@ -188,3 +188,25 @@ def check_binary(arr):
 
 def sigmoid(n):
     return 1/(1+np.exp(-n))
+
+def variance(arr, d):
+    # per column
+    # d is the number of rows to calculate
+    # the smoothing parameter
+    var = np.var(arr)
+    var = var + (1/d)  # smoothing
+    return var
+
+def add_col(data_rows, n):
+    for r in range(len(data_rows)):
+        data_rows[r].append(n)
+    return data_rows
+
+def get_hw(row, w, binary=False):
+    sum = 0
+    for jct, j in enumerate(row):
+        sum += j * w[jct]
+    if binary:
+        sum = (1./(1. + np.exp(sum))) -1
+    return sum
+

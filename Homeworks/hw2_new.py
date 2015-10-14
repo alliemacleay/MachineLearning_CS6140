@@ -1,4 +1,16 @@
 __author__ = 'Allison MacLeay'
+"""
+Issues
+---------
+GD
+Linear - My MSE's are unbelievably good but predicte value
+    look good too
+Logisitc - Either my classifier function is completely wrong
+    or W is wrong.  I assume I could use the linear reg function
+    but results are mostly less than .1 rather than .5 as
+    expected
+
+"""
 
 import CS6140_A_MacLeay.utils as utils
 import CS6140_A_MacLeay.utils.Tree as mytree
@@ -10,6 +22,24 @@ import hw1
 import numpy as np
 import pandas as pd
 import sys
+
+class Model_w():
+    def __init__(self, w_array=None):
+        self.w = w_array
+
+    def update(self, w_array):
+        if self.w == None:
+            self.w = w_array
+        else:
+            if len(w_array) != len(self.w):
+                print "ERROR!!!  Lengths are not the same"
+            # Take the average
+            sum = 0
+            for i in range(len(w_array)):
+                self.w[i] = float(w_array[i] + self.w[i])/2
+
+
+
 
 def dec_or_reg_tree(df_train, df_test, Y):
     binary = utils.check_binary(df_train[Y])
@@ -34,16 +64,74 @@ def linear_reg_errors(df_train, df_test, Y, ridge=False, sigmoid=False):
     return [error_train, error_test]
 
 def linear_reg(df, Y, binary=False, ridge=False, sigmoid=False):
-    columns = [col for col in df.columns if (col != 'is_spam' and col != 'MEDV')]
+    means = []
+    columns = [col for col in df.columns if (col != 'is_spam' and col != 'MEDV' and col != 'y')]
     if ridge:
         w = mystats.get_linridge_w(df[columns], df[Y], binary)
     else:
+        for col in df.columns:
+            mean = df[col].mean()
+            means.append(mean)
+            df[col] -= mean
+
         w = mystats.get_linreg_w(df[columns], df[Y])
 
-    predict = mystats.predict(df[columns], w, binary)
+    print('w:')
+    print(w)
+    predict = mystats.predict(df[columns], w, binary, means=means)
     error = mystats.get_error(predict, df[Y], binary)
     return error
 
+def k_folds_linear_gd(df_test, df_train, Y):
+    k = 10
+    df_test = gd.pandas_to_data(df_test)
+    k_folds = partition_folds(df_test, k)
+    model = Model_w()
+    theta = None
+    for ki in range(k - 1):
+        print 'k fold is {}'.format(k)
+        data, truth = get_data_and_truth(k_folds[ki])
+        binary = True
+        model.update(gd.gradient(data, np.array(truth), .00001, max_iterations=5, binary=binary))
+        print model.w
+        if theta is None:
+            theta, max_acc = get_best_theta(data, truth, model.w, binary, False)
+        predict = gd.predict_data(data, model.w, binary, False, theta)
+        error = mystats.get_error(predict, truth, binary)
+        print 'Error for fold {} is {} with theta =  {}'.format(k, error, theta)
+    test, truth = get_data_and_truth(k_folds[k-1])
+    predict = gd.predict_data(test, model.w, binary, False, theta)
+    test_error = mystats.get_error(predict, truth, binary)
+    return [error, test_error]
+
+
+
+def get_best_theta(data, truth, model, binary, logistic):
+    best_theta = None
+    max_acc = 0
+    modmin = min(model)
+    modmax = max(model)
+    for theta_i in range(100):
+        theta = modmin + float(theta_i)/(modmax - modmin)
+        predict = gd.predict_data(data, model, binary, False, theta)
+        acc = mystats.get_error(predict, truth, binary)
+        if best_theta is None:
+            best_theta = theta
+            max_acc = acc
+        elif acc > max_acc:
+            best_theta = theta
+            max_acc = acc
+    return best_theta, max_acc
+
+
+def linear_gd_error(df, Y):
+    binary = utils.check_binary(df[Y])
+    model = gd.gradient(df, df[Y], .00001, max_iterations=50)
+    print model
+    predict = gd.predict(df, model, binary)
+    print predict
+    error = mystats.get_error(predict, df_train[Y], binary)
+    return error
 
 def linear_gd(df_train, df_test, Y):
     """ linear gradient descent """
@@ -104,18 +192,18 @@ def q_1():
     h_test, h_train = utils.load_and_normalize_housing_set()
     h_results = []
     s_results = []
-    h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # works
-    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # works
-    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # works
-    h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works
-    #h_results.append(logistic_gd(h_train, h_test, 'MEDV'))
+    #h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # MSE - 568 test- 448
+    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # MSE - 27 test -14
+    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # 24176 - 68289
+    #h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works but MSE too low? .0022 - .0013
+    #h_results.append(logistic_gd(h_train, h_test, 'MEDV'))  # 1.46e_13 - 1.17e+13
 
     s_test, s_train = utils.split_test_and_train(utils.load_and_normalize_spam_data())
-    s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works
-    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works
-    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works
-    s_results.append(linear_gd(s_train, s_test, 'is_spam')) # works
-    s_results.append(logistic_gd(s_train, s_test, 'is_spam'))
+    #s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works .845 - .86
+    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works .8609 - .903
+    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works .8416 - .8543
+    s_results.append(k_folds_linear_gd(s_train, s_test, 'is_spam')) # does not work .6114 - .6114
+    #s_results.append(logistic_gd(s_train, s_test, 'is_spam')) # returns perfect... 1- 1
     print_results_1(s_results, h_results)
 
 
@@ -137,8 +225,29 @@ def homework2():
     #q_3()
 
 
+def partition_folds(data, k):
+    if len(data) > k:
+        array = [[] for _ in range(k)]
+    else:
+        array = [[] for _ in range(len(data))]
+    for i in range(len(data)):
+        array[i % 10].append(data[i])
+    return array
+
+def get_data_and_truth(data):
+    print data
+    x = []
+    truth = []
+    for r in range(len(data)):
+        row = data[r]
+        x.append(row[:-1])
+        truth.append(row[-1])
+    return x, truth
+
 if __name__ =='__main__':
     homework2()
+
+
 
 
 

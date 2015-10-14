@@ -36,11 +36,14 @@ def compute_MSE(predicted, observed):
         err += (predicted - o)**2/predicted
     return err/len(observed)
 
-def predict(df, model, binary=False, sigmoid=False):
+def predict(df, model, binary=False, sigmoid=False, means=None):
     #if 'b' not in df.columns:
     #    df['b'] = 1
     #model = np.append(model,1)
+    df['b'] = 1
     predictions = np.dot(df, model)
+    if means is not None and len(means) == len(predictions):
+        predictions = [predictions[i] + means[i] for i in range(len(predictions))]
     if binary:
         for p in range(len(predictions)):
             if predictions[p] < .5:
@@ -105,7 +108,7 @@ def binary_info_gain(df, feature, y):
     :param y: column to predict
     :return: information gain from binary feature column
     """
-    return sum(np.logical_and(df[feature], df[y]))/len(df[feature])
+    return float(sum(np.logical_and(df[feature], df[y])))/len(df[feature])
 
 
 def get_performance_stats(truth, predict):
@@ -135,7 +138,7 @@ def binary_probability(df, y):
     if len(df[y]) is 0:
         prob = 0
     else:
-        prob = sum(df[y])/len(df[y])
+        prob = float(sum(df[y]))/len(df[y])
     return prob
 
 def binary_entropy(df, y):
@@ -149,7 +152,7 @@ def least_squares(df, y=None):
         df = list(df[y])
     if len(df) == 0:
         return 0
-    mu = sum(df)/len(df)
+    mu = float(sum(df))/len(df)
     sigma = 0
     for i in range(0, len(df)):
         sigma += (df[i] - mu)**2
@@ -168,30 +171,67 @@ def get_linreg_w(X, Y):
     Y: array of y
     return: w as matrix """
     print X
+    X['b'] = 1
     Xt = X.transpose()
     w_den = np.dot(Xt, X)
     w_pre = np.dot(utils.matrix_inverse(w_den), Xt)
     w = np.dot(w_pre, Y)
+    del X['b']
     return w
+
+def column_product(w, x):
+    if type(w) is np.float64:
+        w = list(w)
+    sum = 0
+    for i in range(len(w)):
+        sum += w[i] * x[i]
+    return sum
+
+def dot_product_sanity(X, w):
+    """X is a matrix, w is a vector"""
+    result_vector = np.zeros(len(X.keys()))  # number of rows
+    row_i = 0
+    for row_k in X.keys():  # number of column
+        row = X[row_k]
+        result_vector[row_i] = column_product(row, w)
+        row_i += 1
+    return result_vector
+
+def check_vector_equality(vec1, vec2):
+    is_equal = True
+    error_msg = []
+    count_unequal = 0
+    if len(vec1) != len(vec2):
+        is_equal = False
+        error_msg.append('rows are different sizes ({}, {})'.format(len(vec1), len(vec2)))
+    else:
+        for i in range(len(vec1)):
+            if vec1[i] != vec2[i]:
+                is_equal = False
+                count_unequal += 1
+    if is_equal:
+        print 'Looks good!  Lengths are {}'.format(len(vec1))
+    else:
+        print '\n'.join(error_msg)
+    return is_equal
+
+
 
 def get_linridge_w(X_uncentered, Y, learning_rate):
     """ Linear ridge
     X: dataframe of x1, x2, x..., xn
     Y: array of y
     return: w as matrix """
-    Xdict = {}
-    for index, row in X_uncentered.iterrows():
-        print row
-        x_bar = row.mean()
-        Xdict[index] = []
-        for col in row:
-            Xdict[index].append(col - x_bar)
+    #TODO - add mean back in before predict
 
-    Xt = pd.DataFrame(Xdict)
+    X = X_uncentered
 
-    X = Xt.transpose()
+    X['b'] = 1
+    Xt = X.transpose()
+
     I = np.identity(X.shape[1])
     w_den = np.dot(Xt, X) + np.dot(learning_rate, I)
+    #w_den = np.cov(X) + np.dot(learning_rate, I)
     w_pre = np.dot(utils.matrix_inverse(w_den), Xt)
     w = np.dot(w_pre, Y)
     return w
@@ -249,6 +289,32 @@ def log_likelihood(array):
 def init_w(size):
     df = pd.DataFrame(np.random.random(size))
     return df.reindex()
+
+def summary(array):
+    """ returns mean and variance"""
+    return [utils.average(array), utils.variance(array, len(d))]
+
+
+""" Added for lin ridge """
+def pandas_to_data(df):
+    array = []
+    for i in range(len(df)):  # row
+        row = df.iloc[i]
+        row_array = []
+        for j in range(len(row)):
+            row_array.append(row[j])
+        array.append(row_array)
+    return array
+
+def transpose_array(arr):
+    tarry = []
+    for i in range(len(arr)):
+        if i == 0:
+            for ix in range(len(arr[i])):
+                tarry.append([])
+        for j in range(len(arr[i])):
+            tarry[j].append(arr[i][j])
+    return tarry
 
 
 

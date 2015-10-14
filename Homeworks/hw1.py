@@ -281,7 +281,7 @@ def branch_node(node, df, threshold, Y, regression=False):
             error = mystats.binary_error(data, Y, predict)
         else:
             print str(feature) +'is fueaturea ' + str(label) + str(node.presence)
-            predict = sum(data[Y])/len(data[Y])
+            predict = float(sum(data[Y]))/len(data[Y])
             error = mystats.compute_MSE(predict, list(data[Y]))
         node.leaf(predict, error)
 
