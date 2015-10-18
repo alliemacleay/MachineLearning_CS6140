@@ -33,18 +33,26 @@ Looking at the training and testing performance, does it appear that the gaussia
     k = 10
     train_acc_sum = 0
     k_folds = hw3.partition_folds(spamData, k)
-    gda = hw3.GDA()
+    gdas = []
     for ki in range(k - 1):
         subset = []
+        gda = hw3.GDA()
         X, truth = hw3.separate_X_and_y(k_folds[ki])
-        for y in [0, 1]:
-            subset.append(hw3.get_sub_at_value(k_folds[ki], truth, y))
-            truth_rows, data_rows, data_mus, y_mu = get_data_and_mus(subset[y])
-            covariance_matrix = hw3.get_covar(data_rows, truth_rows)
-            gda.train(data_rows, data_mus, covariance_matrix, y)
+        covariance_matrix = hw3.get_covar(X)
+        gda.p_y = float(sum(truth)) / len(truth)
+        gda.train(X, covariance_matrix, truth)
         predictions = gda.predict(X)
+        #print predictions
         accuracy = mystats.get_error(predictions, truth, True)
+        #gdas.append(gda)
         print_output(ki, accuracy)
+        #print gda.prob
+        gdas.append(gda)
+    #agg_gda = hw3.GDA()
+    #agg_gda.aggregate(gdas)
+    #X, truth = hw3.separate_X_and_y(k_folds[k-1])
+    #predictions = agg_gda.predict(X)
+    #accuracy = mystats.get_error(predictions, truth, True)
 
 
 def q2():
@@ -52,24 +60,33 @@ def q2():
     k = 10
     train_acc_sum = 0
     k_folds = hw3.partition_folds(spamData, k)
-    for model_type in range(1):  #range(3):
-        nb_model = nb.NaiveBayes(model_type, alpha=.001)
+    for model_type in [2]:  #range(3):
+        nb_models = []
         for ki in range(k - 1):
-            truth_rows, data_rows, data_mus, y_mu = get_data_and_mus(k_folds[ki])
+            alpha = .001 if model_type==0 else 0
+            nb_model = nb.NaiveBayes(model_type, alpha=alpha)
+            truth_rows, data_rows, data_mus, y_mu = hw3.get_data_and_mus(k_folds[ki])
             nb_model.train(data_rows, truth_rows)
             predict = nb_model.predict(data_rows)
+            print predict
             accuracy = hw3.get_accuracy(predict, truth_rows)
             train_acc_sum += accuracy
             print_output(ki, accuracy)
-        truth_rows, data_rows, data_mus, y_mu = get_data_and_mus(k_folds[k - 1])
-        test_predict = nb_model.predict(data_rows)
+            nb_models.append(nb_model)
+        nb_combined = nb.NaiveBayes(model_type, alpha=.001)
+        if model_type < 2:
+            nb_combined.aggregate_model(nb_models)
+        else:
+            nb_combined.aggregate_model3(nb_models)
+        truth_rows, data_rows, data_mus, y_mu = hw3.get_data_and_mus(k_folds[k - 1])
+        test_predict = nb_combined.predict(data_rows)
         test_accuracy = hw3.get_accuracy(test_predict, truth_rows)
         print_test_output(test_accuracy, float(train_acc_sum)/(k-1))
 
 
 
             #print len(k_folds[0])
-    truth_rows, data_rows, data_mus, y_mu = get_data_and_mus(spamData)
+    truth_rows, data_rows, data_mus, y_mu = hw3.get_data_and_mus(spamData)
 
 
 
@@ -78,17 +95,22 @@ def q3():
     """
     pass
 def q4():
-    pass
+    """
+    :return: mean, cov_matrix (std_dev), number in class
+    """
+    for data_set in [2,3]:
+        data = hw3.pandas_to_data(utils.load_gaussian(data_set))
+        q4_result_print([1, 2, 3], ['cov_1', 'cov2', 'cov3'], 100)
+
+def q4_result_print(means, covariances, number):
+    for i in range(len(means)):
+        print 'mean_{}: {}'.format(i, means[i])
+        print 'cov_{}: {}'.format(i, covariances[i])
+        print 'n{}: {}'.format(i, number)
+
 def q5():
     """Written"""
     pass
-
-def get_data_and_mus(spamData):
-    truth_rows = hw3.transpose_array(spamData)[-1]  # truth is by row
-    data_rows = hw3.transpose_array(hw3.transpose_array(spamData)[:-1])  # data is by column
-    data_mus = hw3.get_mus(data_rows)
-    y_mu = utils.average(truth_rows)
-    return truth_rows, data_rows, data_mus, y_mu
 
 def print_output(fold, accuracy):
     print 'fold {} ACC: {}'.format(fold + 1, accuracy)

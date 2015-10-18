@@ -6,6 +6,7 @@ import CS6140_A_MacLeay.utils.Stats as mystats
 import numpy as np
 from numpy.linalg import det
 from numpy.linalg import pinv, inv
+#from scipy.stats import multivariate_normal # for checking
 
 def load_and_normalize_spambase():
     return utils.load_and_normalize_spam_data()
@@ -60,8 +61,11 @@ def get_covar_X_Y(data, predict):
 def calc_covar(x, xmu):
     return (x-xmu)**2
 
-def get_covar(data, p):
-    return np.cov(transpose_array(data))
+def get_covar(data):
+    arr = np.array(data).T
+    #return np.cov(transpose_array(data))
+    return np.cov(arr)
+    #return np.corrcoef(arr)
 
 def mu_for_y(data, truth, value):
     """
@@ -96,70 +100,111 @@ class GDA():
         self.prob = None
         self.predicted = None
 
-    def train(self, X, mus, covar_matrix, label):
+    def train2(self, X, mus, covar_matrix, label):
         """ """
+        #TODO train subsets together
+        tmp = X[:]
         if type(X) is list:
-            tmp = X[:]
             X = np.matrix(X)
 
+        prob = []
         x_less = X - mus
-        prob = self.gaussian_process(covar_matrix, x_less)
+        # this is called for each class outside
+        for r, row in enumerate(x_less):
+            row = np.asarray(x_less[r]).ravel()
+            prob.append(self.multivariate_normal(covar_matrix, row, mus=mus))
         # Alternate way to do this found below.
         # http://machinelearningmastery.com/naive-bayes-classifier-scratch-python/
         X = tmp[:]
-        print len(prob)
         self.update_prob(label, prob)
 
-    def gaussian_process(self, covar_matrix, x_less):
+    def train(self, X, covar_matrix, y):
+        """ """
+        #TODO train subsets together
+        self.prob = {}
+        mus = {}
+        #TODO my mus passed in are wrong - should be mus from total set
+        for label in [0, 1]:
+            self.prob[label] = [0 for _ in range(len(X))]
+            mus[label] = get_mus(get_sub_at_value(X, y, label))
+        mus['X'] = get_mus(X)
+        for label in [0, 1, 'X']:
+            prob = []
+            #sub_data, sub_truth, sub_indeces = get_data_truth(X, y, mus['X'], label)
+            x_less = [np.asarray(X[xi]) - mus[label] for xi in range(len(X))]
+            # this is called for each class outside
+            for r, row in enumerate(x_less):
+                row = np.asarray(x_less[r]).ravel()
+                prob.append(self.multivariate_normal(covar_matrix, row, mus=mus[label]))
+
+            self.prob[label] = prob
+        # now we have prob = [0: prob_x0_rows, 1:prob_x1_rows, 'X':prob_x_rows]
+
+        # Alternate way to do this found below.
+        # http://machinelearningmastery.com/naive-bayes-classifier-scratch-python/
+        #self.update_prob(label, prob)
+
+    def aggregate_model(self, models):
+        for gda in models:
+            pass
+
+    def multivariate_normal(self, covar_matrix, x_less, alpha=1, mus=[]):
         """
         :param d: number of rows in X
         :param covar_matrix:
         :param x_less: X - u , u is a vector of mu
         :return:
         """
+        x_less = utils.to_col_vec(np.asarray(x_less))
+        epsilon = float(alpha * 1) / len(covar_matrix)
+        set_diag_min(covar_matrix, epsilon)
         d = len(x_less)
-        prob = 1/ ((2 * np.pi)**(float(d)/2))
-        prob = prob * 1/(det(covar_matrix)**(float(1)/2))
-        dot = np.dot(np.dot(pinv(covar_matrix), x_less.T), x_less)
+        prob = float(1)/ ((2 * np.pi)**(float(d)/2))
+        determinant = det(covar_matrix)
+        if determinant == 0:
+            print 'Determinant matrix cannot be singular'
+        prob = prob * 1.0/(determinant**(float(1)/2))
+        inverse = pinv(covar_matrix)
+        dot = np.dot(np.dot(x_less.T, inverse), x_less)
         prob = prob * np.exp(-float(1)/2 * dot)
-        return prob
+        #var = multivariate_normal(mean=mus, cov=determinant)
+        return prob[0][0]
 
     def update_prob(self, label, prob):
         if self.prob is None:
             self.prob = {label: prob}
-        if label not in self.prob.keys():
-            self.prob[label] = prob
-        else:
-            #TODO - update
+        elif label not in self.prob.keys():
             self.prob[label] = prob
 
     def predict(self, data):
-        if self.predicted is None:
-            self.predicted = []
+        predicted = []
         lprob = {x: 1 for x in self.prob.keys()}
         #TODO - Do I use Gaussian process instead?
         for r in range(len(data)):
-            for c in range(len(data[r])):
-                for label in range(len(self.prob.keys())):
-                    prob = self.prob[label][c]
-                    # I already know this is wrong.  Prob is not returning
-                    # the right size and values
-                    lprob[label] = lprob[label] * prob
             max_prob_label = None
-            for label in self.prob.keys():
+            for label in [0, 1]:
                 if max_prob_label is None:
-                    max_prob_label = [self.prob[label], label]
+                    max_prob_label = [self.prob[label][r], label]
                 else:
-                    if self.prob[label] > max_prob_label[0]:
-                        max_prob_label = [self.prob[label], label]
-            self.predicted.append(max_prob_label[0])
+                    if self.prob[label][r] > max_prob_label[0]:
+                        max_prob_label = [self.prob[label][r], label]
+            predicted.append(max_prob_label[1])
+        return predicted
+
+    def normalize_probabilities(self):
+        for i in range(len(self.prob[0])):
+            Z = self.prob[0] + self.prob[1]
+            self.prob[0] = self.prob[0] / Z
+            self.prob[1] = self.prob[1] / Z
 
 
 def partition_folds(data, k):
+    #TODO - is this wrong??
     if len(data) > k:
         array = [[] for _ in range(k)]
     else:
         array = [[] for _ in range(len(data))]
+    #array = []
     for i in range(len(data)):
         array[i % 10].append(data[i])
     return array
@@ -170,6 +215,96 @@ def get_accuracy(predict, truth):
         if predict[i] == truth[i]:
             right += 1
     return float(right)/len(predict)
+
+def set_diag_min(matrix, epsilon):
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            if i==j and matrix[i][j] < epsilon:
+                matrix[i][j] = epsilon
+
+def get_data_and_mus(spamData):
+    truth_rows = transpose_array(spamData)[-1]  # truth is by row
+    data_rows = transpose_array(transpose_array(spamData)[:-1])  # data is by column
+    data_mus = get_mus(data_rows)
+    y_mu = utils.average(truth_rows)
+    return truth_rows, data_rows, data_mus, y_mu
+
+def get_data_truth(data_rows, truth_rows, data_mus, label):
+    data = []
+    mus = []
+    indeces = []
+    truth = []
+    for i in range(len(truth_rows)):
+        if truth_rows[i] == label:
+            data.append(data_rows[i])
+            indeces.append(i)
+            truth.append(truth_rows[i])
+
+    return data, truth, indeces
+
+def get_std_dev(data):
+    std_dev = []
+    by_col = transpose_array(data)
+    for col in by_col:
+        std_dev.append(np.std(col))
+    return std_dev
+
+def univariate_normal(data, std_dev, mus, prob_y, alpha=1):
+        """
+        :row: one row
+        :param std_dev:  array by col
+        :param mus: array by col
+        :return: probability
+        """
+        row_probability = []
+        # 1/(std_dev * sqrt(2*pi) ) exp( -1 * (x-mu)**2 / 2 * std_dev**2 )
+        epsilon = 1. * alpha/len(std_dev)
+        prob_const = 1./ np.sqrt(2 * np.pi)
+        for row in data: # for each row
+            prob = 1
+            for j in range(len(row)):
+                std_devj = std_dev[j] + epsilon
+                xj = row[j]
+                epow = -1 * (xj - mus[j])**2 / (2 * std_devj**2)
+                probj = prob_const * (1.0/std_devj) * np.exp(epow)
+                prob = probj * prob
+                # >>> probj
+                #5.9398401853736429
+                # >>> scipy.stats.norm(mus[j], std_devj).pdf(xj)
+                #5.9398401853736429
+            row_probability.append(prob * prob_y)
+        return row_probability
+
+def bins_per_column(data_cols, cutoffs):
+    column_prob = []
+    num_bins = len(cutoffs)
+    for c in range(len(data_cols)):
+        prob = [0 for _ in range(num_bins)]
+        counts = classify(data_cols[c], cutoffs)
+        # add all bin counts for this column
+        for xbin_i in range(len(counts)):
+            prob[xbin_i] += counts[xbin_i]
+        prob = [float(prob[i])  / len(data_cols[c]) for i in range(num_bins)] #+ epsilon
+        column_prob.append(prob)
+    return column_prob
+
+def classify(row, cutoffs):
+    """ Classify a row for bins and return counts """
+    xbin = [0 for _ in range(len(cutoffs))]
+    for j in range(len(row)):
+       xbin[classify_x(row[j], cutoffs)] += 1
+    return xbin
+
+def classify_x(x, cutoffs):
+    """ Classify a data point for bins """
+    bins = len(cutoffs)
+    binlabel = 1
+    # first entry is minimum.  skip it
+    while binlabel < bins and x >= cutoffs[binlabel]:
+        binlabel += 1  # increment until row[j] is greater than binlabel
+    return binlabel - 1
+
+
 
 
 

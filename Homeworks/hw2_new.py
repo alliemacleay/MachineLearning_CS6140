@@ -192,18 +192,18 @@ def q_1():
     h_test, h_train = utils.load_and_normalize_housing_set()
     h_results = []
     s_results = []
-    #h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # MSE - 568 test- 448
-    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # MSE - 27 test -14
-    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # 24176 - 68289
-    #h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works but MSE too low? .0022 - .0013
+    h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # MSE - 568 test- 448
+    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # MSE - 27 test -14
+    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # 24176 - 68289
+    h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works but MSE too low? .0022 - .0013
     #h_results.append(logistic_gd(h_train, h_test, 'MEDV'))  # 1.46e_13 - 1.17e+13
 
     s_test, s_train = utils.split_test_and_train(utils.load_and_normalize_spam_data())
-    #s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works .845 - .86
-    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works .8609 - .903
-    #s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works .8416 - .8543
+    s_results.append(dec_or_reg_tree(s_train, s_test, 'is_spam')) # works .845 - .86
+    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam')) # works .8609 - .903
+    s_results.append(linear_reg_errors(s_train, s_test, 'is_spam', True)) # works .8416 - .8543
     s_results.append(k_folds_linear_gd(s_train, s_test, 'is_spam')) # does not work .6114 - .6114
-    #s_results.append(logistic_gd(s_train, s_test, 'is_spam')) # returns perfect... 1- 1
+    s_results.append(logistic_gd(s_train, s_test, 'is_spam')) # returns perfect... 1- 1
     print_results_1(s_results, h_results)
 
 

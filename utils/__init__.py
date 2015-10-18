@@ -35,6 +35,14 @@ def load_perceptron_data():
     data = read_perceptron_file(os.path.join(path, perceptron_file))
     return split_test_and_train(data)
 
+def load_gaussian(num):
+    path = 'data/hw3'
+    filename = str(num) + 'gaussian.txt'
+    data = read_gaussian_file(os.path.join(path, filename))
+    print data
+    return data
+
+
 def train_subset(df, cols, n=10):
     """" Return a subset of data for debugging """
     sample = random.sample(df.index, n)
@@ -44,8 +52,18 @@ def train_subset(df, cols, n=10):
 def load_and_normalize_spam_data():
     path = os.path.join('../data', 'spambase')
     spamData = read_spam_file(path, 'spambase.data')
+    spamData = remove_constant_column(spamData)
     spamData = normalize_data(spamData, 'is_spam')
     return spamData
+
+
+def remove_constant_column(df):
+    varying_columns = []
+    for col in df.columns:
+        if len(df[col].unique()) > 1:
+            varying_columns.append(col)
+    return df[varying_columns]
+
 
 def split_test_and_train(df, percent=.2, norepeat=True):
     # Alternatively can use the following
@@ -124,6 +142,13 @@ def read_housing_file(f):
 
 def read_perceptron_file(f):
     df = read_file(f)
+    df = df.transpose()
+    #print df[0]  # columns
+    #print df[:][0]  # rows
+    return df
+
+def read_gaussian_file(f):
+    df = read_file(f, ' ')
     df = df.transpose()
     #print df[0]  # columns
     #print df[:][0]  # rows
