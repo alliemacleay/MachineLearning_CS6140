@@ -4,7 +4,7 @@ import pandas as pd
 import sys
 #import CS6140_A_MacLeay.utils as utils
 from CS6140_A_MacLeay import utils
-
+from numpy.linalg import det, pinv, inv
 from sklearn.cross_validation import KFold
 
 
@@ -112,7 +112,7 @@ def binary_info_gain(df, feature, y):
 
 
 def get_performance_stats(truth, predict):
-    print 'len: ' + str(len(truth)) + ' : ' + str(len(predict))
+    #print 'len: ' + str(len(truth)) + ' : ' + str(len(predict))
     tp = 0
     tn = 0
     fp = 0
@@ -315,6 +315,37 @@ def transpose_array(arr):
         for j in range(len(arr[i])):
             tarry[j].append(arr[i][j])
     return tarry
+
+
+def multivariate_normal(covar_matrix, x_less, alpha=1):
+        """
+        :param d: number of rows in X
+        :param covar_matrix:
+        :param x_less: X - u , u is a vector of mu
+        :return:
+        """
+        covar_matrix = np.array(covar_matrix)
+        x_less = utils.to_col_vec(np.asarray(x_less))
+        epsilon = float(alpha * 1) / len(covar_matrix)
+        set_diag_min(covar_matrix, epsilon)
+        d = len(x_less)
+        prob = float(1)/ ((2 * np.pi)**(float(d)/2))
+        determinant = det(covar_matrix)
+        if determinant == 0:
+            print 'Determinant matrix cannot be singular'
+        prob = prob * 1.0/(determinant**(float(1)/2))
+        inverse = pinv(covar_matrix)
+        dot = np.dot(np.dot(x_less.T, inverse), x_less)
+        prob = prob * np.exp(-float(1)/2 * dot)
+        #var = multivariate_normal(mean=mus, cov=determinant)
+        return prob[0][0]
+
+
+def set_diag_min(matrix, epsilon):
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            if i==j and matrix[i][j] < epsilon:
+                matrix[i][j] = epsilon
 
 
 

@@ -39,7 +39,7 @@ def load_gaussian(num):
     path = 'data/hw3'
     filename = str(num) + 'gaussian.txt'
     data = read_gaussian_file(os.path.join(path, filename))
-    print data
+    #print data
     return data
 
 
@@ -152,6 +152,7 @@ def read_gaussian_file(f):
     df = df.transpose()
     #print df[0]  # columns
     #print df[:][0]  # rows
+    print 'read_gaussian'
     return df
 
 
@@ -235,3 +236,19 @@ def get_hw(row, w, binary=False):
         sum = (1./(1. + np.exp(sum))) -1
     return sum
 
+def split_truth_from_data(data):
+    """ Assumes that the truth column is the last column """
+    truth_rows = transpose_array(data)[-1]  # truth is by row
+    data_rows = transpose_array(transpose_array(data)[:-1])  # data is by column
+    return truth_rows, data_rows
+
+
+def transpose_array(arr):
+    tarry = []
+    for i in range(len(arr)):
+        if i == 0:
+            for ix in range(len(arr[i])):
+                tarry.append([])
+        for j in range(len(arr[i])):
+            tarry[j].append(arr[i][j])
+    return tarry

@@ -4,8 +4,7 @@ import CS6140_A_MacLeay.utils as utils
 import pandas as pd
 import CS6140_A_MacLeay.utils.Stats as mystats
 import numpy as np
-from numpy.linalg import det
-from numpy.linalg import pinv, inv
+from CS6140_A_MacLeay.utils.Stats import multivariate_normal
 #from scipy.stats import multivariate_normal # for checking
 
 def load_and_normalize_spambase():
@@ -155,20 +154,7 @@ class GDA():
         :param x_less: X - u , u is a vector of mu
         :return:
         """
-        x_less = utils.to_col_vec(np.asarray(x_less))
-        epsilon = float(alpha * 1) / len(covar_matrix)
-        set_diag_min(covar_matrix, epsilon)
-        d = len(x_less)
-        prob = float(1)/ ((2 * np.pi)**(float(d)/2))
-        determinant = det(covar_matrix)
-        if determinant == 0:
-            print 'Determinant matrix cannot be singular'
-        prob = prob * 1.0/(determinant**(float(1)/2))
-        inverse = pinv(covar_matrix)
-        dot = np.dot(np.dot(x_less.T, inverse), x_less)
-        prob = prob * np.exp(-float(1)/2 * dot)
-        #var = multivariate_normal(mean=mus, cov=determinant)
-        return prob[0][0]
+        return multivariate_normal(covar_matrix, x_less, alpha=1)
 
     def update_prob(self, label, prob):
         if self.prob is None:
@@ -216,11 +202,6 @@ def get_accuracy(predict, truth):
             right += 1
     return float(right)/len(predict)
 
-def set_diag_min(matrix, epsilon):
-    for i in range(len(matrix)):
-        for j in range(len(matrix[i])):
-            if i==j and matrix[i][j] < epsilon:
-                matrix[i][j] = epsilon
 
 def get_data_and_mus(spamData):
     truth_rows = transpose_array(spamData)[-1]  # truth is by row
@@ -284,7 +265,20 @@ def bins_per_column(data_cols, cutoffs):
         # add all bin counts for this column
         for xbin_i in range(len(counts)):
             prob[xbin_i] += counts[xbin_i]
-        prob = [float(prob[i])  / len(data_cols[c]) for i in range(num_bins)] #+ epsilon
+        prob = [float(prob[i]) / len(data_cols[c]) for i in range(num_bins)]
+        column_prob.append(prob)
+    return column_prob
+
+def bins_per_column_by_col(data_cols, cutoffsc):
+    column_prob = []
+    num_bins = len(cutoffsc)
+    for c in range(len(data_cols)):
+        prob = [0 for _ in range(num_bins)]
+        counts = classify(data_cols[c], cutoffsc[c])
+        # add all bin counts for this column
+        for xbin_i in range(len(counts)):
+            prob[xbin_i] += counts[xbin_i]
+        prob = [float(prob[i]) / len(data_cols[c]) for i in range(num_bins)]
         column_prob.append(prob)
     return column_prob
 
