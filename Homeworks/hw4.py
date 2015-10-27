@@ -31,7 +31,7 @@ import CS6140_A_MacLeay.Homeworks.HW3 as hw3
 
 def q1():
     spamData = hw3.pandas_to_data(hw3.load_and_normalize_spambase())
-    adaboost = adab.Adaboost(1)
+    adaboost = adab.AdaboostOptimal(7)
     adaboost.run(spamData)
     adaboost.print_stats()
 
