@@ -1,3 +1,5 @@
+from sklearn.metrics import roc_auc_score
+
 __author__ = 'Allison MacLeay'
 
 import CS6140_A_MacLeay.utils.Adaboost as adab
@@ -8,7 +10,7 @@ import CS6140_A_MacLeay.Homeworks.hw4 as hw4
 import CS6140_A_MacLeay.Homeworks.HW4.plots as plt
 import CS6140_A_MacLeay.Homeworks.HW4.data_load as dl
 from sklearn import tree
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, make_classification
 import numpy as np
 import os
 
@@ -17,8 +19,8 @@ def UnitTests():
     #AdaboostWrongTest()
     #TestAbstract()
     #changeWeight()
-    #TreeTest2()
-    TreeTest()
+    TreeTest2()
+    #TreeTest()
     #testPlot()
     #testBranchOptimal()
     #dataloads()
@@ -75,12 +77,18 @@ def TreeTest():
 
 def TreeTest2():
     iris = load_iris()
+
+
+    X, y = make_classification(n_features=2, n_redundant=0, n_informative=2,
+                           random_state=1, n_clusters_per_class=1)
+
     clf = tree.DecisionTreeClassifier()
-    clf = clf.fit(iris.data, iris.target)
+    clf = clf.fit(X, y)
+    print(roc_auc_score(y, clf.predict(X)))
+
     clf2 = decTree.TreeOptimal()
-    clf2.fit(iris.data, iris.target)
-    clf2.predict(iris.data[:1,:])
-    print clf.predict(iris.data[:1,:])
+    clf2.fit(X, y)
+    print(roc_auc_score(y, clf2.predict(X)))
 
 def testBranchOptimal():
     data, truth = get_test_theta()
