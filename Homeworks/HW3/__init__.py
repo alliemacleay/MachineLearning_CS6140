@@ -186,13 +186,15 @@ class GDA():
 
 def partition_folds(data, k):
     #TODO - is this wrong??
+    if k == 1:
+        return [data]
     if len(data) > k:
         array = [[] for _ in range(k)]
     else:
         array = [[] for _ in range(len(data))]
     #array = []
     for i in range(len(data)):
-        array[i % 10].append(data[i])
+        array[i % k].append(data[i])
     return array
 
 def get_accuracy(predict, truth):

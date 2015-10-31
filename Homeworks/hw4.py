@@ -28,11 +28,66 @@ Decision stump - feature (fi) threshold (tij)  pair
 
 import CS6140_A_MacLeay.utils.Adaboost as adab
 import CS6140_A_MacLeay.Homeworks.HW3 as hw3
+import CS6140_A_MacLeay.Homeworks.HW4 as hw4
+import CS6140_A_MacLeay.Homeworks.HW4.plots as plt
+import CS6140_A_MacLeay.Homeworks.HW4.data_load as dl
+import os
+import CS6140_A_MacLeay.utils as utils
+import CS6140_A_MacLeay.utils.Stats as mystats
 
 def q1():
     spamData = hw3.pandas_to_data(hw3.load_and_normalize_spambase())
-    adaboost = adab.AdaboostOptimal(7)
-    adaboost.run(spamData)
-    adaboost.print_stats()
+    k = 10
+    all_folds = hw3.partition_folds(spamData, k)
+    tprs = []
+    fprs = []
+    for i in [0]: #range(len(all_folds)):
+        kf_data, kf_test = dl.get_train_and_test(all_folds, i)
+        y, X = hw4.split_truth_from_data(kf_data)
+        adaboost = adab.AdaboostOptimal(1)
+        adaboost.fit(X, y)
+        adaboost.print_stats_q1()
+        predicted = adaboost.predict(X)
+        print predicted[:20]
+        print y[:20]
+        error = adaboost.get_error(predicted, y)
+        print 'Adaboost fold error: {}'.format(error)
+        directory = '/Users/Admin/Dropbox/ML/MachineLearning_CS6140/CS6140_A_MacLeay/Homeworks'
+        path = os.path.join(directory, 'hw4errors.pdf')
+        print path
+        #plt.Errors([adaboost.errors]).plot_all_errors(path)
+        #roc = plt.ROC()
+        #roc.add_tpr_fpr_arrays(adaboost.tpr.values(), adaboost.fpr.values())
+        #roc.plot_ROC(os.path.join(directory, 'hw4_roc.pdf'))
+
+def q2():
+    """Boosting on UCI datasets"""
+    pass
+
+def q3():
+    """Run your code from PB1 on Spambase dataset to perform Active Learning.
+    Specifically:
+    - start with a training set of about 5% of the data (selected randomly)
+    - iterate M episodes: train the Adaboost for T rounds; from the datapoints
+      not in the training set, select the 2% ones that are closest to the
+      separation surface (boosting score F(x) closest to ) and add these to the
+      training set (with labels). Repeat until the size of the training set
+      reaches 50% of the data.
+
+    How is the performance improving with the training set increase? Compare the
+    performance of the Adaboost algorithm on the c% randomly selected training set
+    with c% actively-built training set for several values of c : 5, 10, 15, 20,
+    30, 50.
+    """
+    pass
+
+def q4():
+    """
+    ECOC
+    """
+
+
+
+
 
 

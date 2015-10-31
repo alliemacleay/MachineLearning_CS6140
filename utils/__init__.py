@@ -242,6 +242,16 @@ def split_truth_from_data(data):
     data_rows = transpose_array(transpose_array(data)[:-1])  # data is by column
     return truth_rows, data_rows
 
+def pandas_to_data(df):
+    array = []
+    for i in range(len(df)):  # row
+        row = df.iloc[i]
+        row_array = []
+        for j in range(len(row)):
+            row_array.append(row[j])
+        array.append(row_array)
+    return array
+
 
 def transpose_array(arr):
     tarry = []
@@ -252,3 +262,4 @@ def transpose_array(arr):
         for j in range(len(arr[i])):
             tarry[j].append(arr[i][j])
     return tarry
+

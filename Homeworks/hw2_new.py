@@ -18,6 +18,8 @@ import CS6140_A_MacLeay.utils.Stats as mystats
 import CS6140_A_MacLeay.utils.GradientDescent as gd
 import CS6140_A_MacLeay.utils.NNet as nnet
 import CS6140_A_MacLeay.utils.Perceptron as perc
+#import CS6140_A_MacLeay.Homeworks.HW4 as treeHW4
+import HW4 as treeHW4
 import hw1
 import numpy as np
 import pandas as pd
@@ -43,17 +45,31 @@ class Model_w():
 
 def dec_or_reg_tree(df_train, df_test, Y):
     binary = utils.check_binary(df_train[Y])
-    node = mytree.Node(np.ones(len(df_train)))
-    hw1.branch_node(node, df_train, 5, Y)
-    model = mytree.Tree(node)
-    predict = model.predict_obj()
-    error_train = mystats.get_error(predict, df_train[Y], binary)
+    if binary:
+        newtree = treeHW4.TreeOptimal()
+        y = utils.pandas_to_data(df_train[Y])
+        nondf_train = utils.pandas_to_data(df_train)
+        nondf_test = utils.pandas_to_data(df_test)
+        newtree.fit(nondf_train, y)
+        predict = newtree.predict(nondf_train)
+        error_train = mystats.get_error(predict, y, binary)
 
-    node.presence = np.ones(len(df_test))
-    hw1.test_node(node, df_test, Y)
-    test_tree = mytree.Tree(node)
-    predict = test_tree.predict_obj()
-    error_test = mystats.get_error(predict, df_test[Y], binary)
+        y = utils.pandas_to_data(df_test[Y])
+        predict = newtree.predict(nondf_test)
+        error_test = mystats.get_error(predict, y)
+    else:
+
+        node = mytree.Node(np.ones(len(df_train)))
+        hw1.branch_node(node, df_train, 5, Y)
+        model = mytree.Tree(node)
+        predict = model.predict_obj()
+        error_train = mystats.get_error(predict, df_train[Y], binary)
+
+        node.presence = np.ones(len(df_test))
+        hw1.test_node(node, df_test, Y)
+        test_tree = mytree.Tree(node)
+        predict = test_tree.predict_obj()
+        error_test = mystats.get_error(predict, df_test[Y], binary)
     return [error_train, error_test]
 
 
