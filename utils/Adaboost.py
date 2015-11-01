@@ -18,9 +18,9 @@ class Adaboost(object):
         if learners == None:
             learners = [default_learner]
         self.local_errors = {}
-        self.errors_weighted = {}  # TODO - remove
+        self.adaboost_error = {}
+        self.adaboost_error_test = {}
         self.weight_distribution = {}
-        self.total_weighted_errors = {}  # TODO - remove
         self.thresholds = {}
         self.weights = {}
         self.average_weighted_errors = {}
@@ -41,39 +41,37 @@ class Adaboost(object):
                 self.learners.append(default)
         print 'inited'
 
-    def print_stats_q1(self):
-        test_error = '?'
-        for round_number in self.errors_weighted.keys():
+    def print_stats(self):
+        for round_number in self.local_errors.keys():
             print 'Round: {} Feature: {} Threshold: {} Round_err: {} Train_err: {} Test_err {} AUC {}' \
                   ''.format(round_number, self.decision_stumps[round_number].feature,
-                            self.decision_stumps[round_number].threshold, '?', self.local_errors[round_number],
-                            test_error, self.auc[round_number])
+                            self.decision_stumps[round_number].threshold, self.local_errors[round_number],
+                            self.adaboost_error[round_number],
+                            self.adaboost_error_test[round_number], self.auc[round_number])
 
-    def print_stats(self):
-        for round_number in self.errors.keys():
-            print 'Round Number: {}'.format(round_number)
-            print 'testing error: {} total weighted err (==1): {}\nweight distr {}\naverage weighted error: {}' \
-                  ''.format(self.errors[round_number], self.total_weighted_errors[round_number],
-                            self.weight_distribution[round_number], self.average_weighted_errors[round_number])
 
     def get_boost_round(self, round_number):
         raise NotImplementedError()
 
-    def fit(self, data, y):
+    def fit(self, data, y, test=None, test_y=None):
         """ pass data into adaboost """
         round_number = 0
         weights = [1./len(data) for _ in range(len(data))]
         while round_number < self.max_rounds and not self.converged:
-            print(weights)
             self.weights[round_number + 1] = weights
             round = self.get_boost_round(round_number)
             round.run(data, y, weights)
             self.local_errors[round_number + 1] = round.error
-            self.errors_weighted[round_number + 1] = round.errors_weighted
             self.weight_distribution[round_number + 1] = round.weight_distribution
             self.decision_stumps[round_number + 1] = round.stump
             self.alphas[round_number + 1] = round.alpha
             ds_predict = self.predict(data)
+            self.adaboost_error[round_number + 1] = self.get_error(ds_predict, y)
+            if test is not None and test_y is not None:
+                ds_predict_test = self.predict(test)
+                self.adaboost_error_test[round_number + 1] = self.get_error(ds_predict_test, test_y)
+            else:
+                self.adaboost_error_test[round_number + 1] = ''
             self.tpr[round_number + 1], self.fpr[round_number + 1] = self.get_tpr_fpr(ds_predict, y)
             self.auc[round_number + 1] = roc_auc_score(y, ds_predict)
             self.converged = round.converged
@@ -95,6 +93,13 @@ class Adaboost(object):
                 alpha_sum += alpha
             predicted.append(1 if sigma >= .5*alpha_sum else -1)
         return predicted
+
+    def get_error(self, predict, truth):
+        correct = 0
+        for i, p in enumerate(predict):
+            if p == truth[i]:
+                correct += 1
+        return 1 - float(correct)/len(truth)
 
     def get_tpr_fpr(self, f, y):
         sum_tpr = 0

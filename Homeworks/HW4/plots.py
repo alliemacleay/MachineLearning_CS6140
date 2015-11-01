@@ -16,14 +16,14 @@ class Errors(object):
         return pandas.DataFrame({'iteration': self.error_matrix[0].keys(), 'error': self.error_matrix[0].values()})
 
     def plot_all_errors(self, path):
-        print self.error_matrix[0]
+        #print self.error_matrix[0]
 
         robjects.r['pdf'](path, width=14, height=8)
 
         #df = pandas.DataFrame({'iteration': range(1, len(self.error_matrix[0])), 'error': self.error_matrix[0]})
         #df = pandas.DataFrame({'fpr': range(10), 'tpr': range(10), 'theta': range(10)})
         df = self.df
-        print(df)
+        #print(df)
         gp = ggplot2.ggplot(convert_to_r_dataframe(df, strings_as_factors=True))
         gp += ggplot2.aes_string(x='iteration', y='error')
         gp += ggplot2.geom_line(color='blue')
@@ -98,7 +98,7 @@ class ROC(object):
         robjects.r['pdf'](path, width=14, height=8)
 
         df = self.df
-        print(df)
+        #print(df)
         gp = ggplot2.ggplot(convert_to_r_dataframe(df, strings_as_factors=True))
         gp += ggplot2.aes_string(x='fpr', y='tpr')
         gp += ggplot2.geom_line(color='blue')

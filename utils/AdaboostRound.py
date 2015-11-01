@@ -9,26 +9,23 @@ import numpy as np
 class BoostRound():
     def __init__(self, adaboost, round_number):
         self.learner = adaboost.learners[round_number]
-        self.error = 1
-        self.errors_weighted = []
+        self.error = 1  # unweighted error
+        self.errors_weighted = []  # weighted errors before normalization
         self.weight_distribution = []  # Dt(x)
-        self.total_weighted_error = .5  # epsilon t
-        self.err_matrix = []
+        self.err_matrix = []  # 0 if incorrect, 1 if correct
         self.alpha = 0  # alpha t
         self.converged = False
-        self.average_weighted_error = None
-        self.stump = None
+        self.stump = None  # Decision stump (feature, threshold pair)
 
     def run(self, f_data, truth, weights):
-        last_alpha = self.alpha
         model = self.fit(f_data, truth, weights)
         predicted = self.predict(model, f_data)  # {-1, 1}
         #self.stump = self.get_decision_stump(predicted, truth)
         # Error matrix for round computed from test data
         self.err_matrix = self.compute_error_matrix(truth, predicted)
         self.error = self.get_error(self.err_matrix)  # 1 if correct, else 0
-        self.errors_weighted = self.weight_errors(self.err_matrix, weights)
         self.set_alpha(weights)
+        self.errors_weighted = self.weight_errors(self.err_matrix, weights)
         self.set_weight_distribution_and_total(weights)  # Dt(x) and epsilon
 
         if model.tree_.feature[0] < 0:
@@ -80,24 +77,17 @@ class BoostRound():
 
     def set_weight_distribution_and_total(self, last_weights):
         sum_weights = sum(self.errors_weighted)
-        #TODO - because python is messed up the sum of weights may not be exact
-        # because of floating point stuff
 
-        if sum_weights == 0:
-            self.converged = True
-            self.total_weighted_error = 0.
-            self.average_weighted_error = 0.
-        else:
-            self.average_weighted_error = float(sum_weights)/len(self.errors_weighted)
-            wd = [self.errors_weighted[i] * np.exp(-self.alpha if self.err_matrix[i]==1 else self.alpha)
-                                        for i in range(len(self.errors_weighted))]
-            sum_wd = sum(wd)
-            self.weight_distribution = [float(w)/sum_wd for w in wd]
+        # Compute Error function - wikipedia version - not correct
+        #wd = [self.errors_weighted[i] * np.exp(-self.alpha if self.err_matrix[i]==1 else self.alpha)
+        #        for i in range(len(self.errors_weighted))]
+        #sum_wd = sum(wd)
+        #self.weight_distribution = [float(w)/sum_wd for w in wd]
+        sum_wd = sum(self.errors_weighted)
+        self.weight_distribution = [float(w)/sum_wd for w in self.errors_weighted]
 
-            if np.any(np.isnan(self.weight_distribution)):
-                raise ValueError('nans in weights')
-
-            self.total_weighted_error = sum(self.weight_distribution)
+        if np.any(np.isnan(self.weight_distribution)):
+            raise ValueError('nans in weights')
 
     def set_alpha(self, weights):
         #TODO fix alphas
@@ -112,7 +102,7 @@ class BoostRound():
         for i, is_correct in enumerate(self.err_matrix):
             if is_correct==0:
                 epsilon += weights[i]
-        return float(epsilon)/len(self.errors_weighted)
+        return float(epsilon)/len(weights)
 
 
 class BoostRoundRandom(BoostRound):

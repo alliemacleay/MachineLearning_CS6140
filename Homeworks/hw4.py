@@ -46,9 +46,10 @@ def q1():
     for i in [0]: #range(len(all_folds)):
         kf_data, kf_test = dl.get_train_and_test(all_folds, i)
         y, X = hw4.split_truth_from_data(kf_data)
+        y_test, X_test = hw4.split_truth_from_data(kf_test)
         adaboost = adab.AdaboostOptimal(50)
-        adaboost.fit(X, y)
-        adaboost.print_stats_q1()
+        adaboost.fit(X, y, X_test, y_test)
+        adaboost.print_stats()
         predicted = adaboost.predict(X)
         print(roc_auc_score(y, predicted))
         print predicted[:20]
