@@ -158,5 +158,5 @@ def crx_data():
 
 if __name__ == '__main__':
     #decTree.q1()
-    #hw4.q1()
-    UnitTests()
+    hw4.q1()
+    #UnitTests()

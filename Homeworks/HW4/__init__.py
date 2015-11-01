@@ -110,6 +110,7 @@ class Branch(object):
         self.entropy = binary_entropy(self.truth_subset)
 
     def get_stump(self):
+        #self.feature
         return DecisionStump(self.feature, self.threshold)
 
     def predict(self, X):

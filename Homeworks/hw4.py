@@ -1,3 +1,5 @@
+from sklearn.metrics import roc_auc_score
+
 __author__ = 'Allison MacLeay'
 
 """
@@ -44,21 +46,20 @@ def q1():
     for i in [0]: #range(len(all_folds)):
         kf_data, kf_test = dl.get_train_and_test(all_folds, i)
         y, X = hw4.split_truth_from_data(kf_data)
-        adaboost = adab.AdaboostOptimal(1)
+        adaboost = adab.AdaboostOptimal(50)
         adaboost.fit(X, y)
         adaboost.print_stats_q1()
         predicted = adaboost.predict(X)
+        print(roc_auc_score(y, predicted))
         print predicted[:20]
         print y[:20]
-        error = adaboost.get_error(predicted, y)
-        print 'Adaboost fold error: {}'.format(error)
         directory = '/Users/Admin/Dropbox/ML/MachineLearning_CS6140/CS6140_A_MacLeay/Homeworks'
         path = os.path.join(directory, 'hw4errors.pdf')
         print path
-        #plt.Errors([adaboost.errors]).plot_all_errors(path)
-        #roc = plt.ROC()
-        #roc.add_tpr_fpr_arrays(adaboost.tpr.values(), adaboost.fpr.values())
-        #roc.plot_ROC(os.path.join(directory, 'hw4_roc.pdf'))
+        plt.Errors([adaboost.local_errors]).plot_all_errors(path)
+        roc = plt.ROC()
+        roc.add_tpr_fpr_arrays(adaboost.tpr.values(), adaboost.fpr.values())
+        roc.plot_ROC(os.path.join(directory, 'hw4_roc.pdf'))
 
 def q2():
     """Boosting on UCI datasets"""
