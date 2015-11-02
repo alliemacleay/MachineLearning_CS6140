@@ -10,13 +10,11 @@ import numpy as np
 import sklearn
 #import sklearn.ensemble.AdaBoostRegressor as skada
 import CS6140_A_MacLeay.utils.AdaboostRound as adar
+from sklearn.tree import DecisionTreeClassifier
 
 
 class Adaboost(object):
-    def __init__(self, max_rounds, learners=None):
-        default_learner = 'SCDecisionTree'
-        if learners == None:
-            learners = [default_learner]
+    def __init__(self, max_rounds, learner=DecisionTreeClassifier):
         self.local_errors = {}
         self.adaboost_error = {}
         self.adaboost_error_test = {}
@@ -26,19 +24,13 @@ class Adaboost(object):
         self.average_weighted_errors = {}
         self.converged = False
         self.max_rounds = max_rounds
-        self.learners = learners
+        self.learner = learner
         self.decision_stumps = {}
         self.alphas = {}
         self.tpr = {}
         self.fpr = {}
         self.auc = {}
 
-        num_learners = len(self.learners)
-        if num_learners < max_rounds:
-            # scipy descision tree is default
-            default = self.learners[-1] if len(self.learners) > 0 else default_learner  # sci py decision tree
-            for i in range(max_rounds - num_learners):
-                self.learners.append(default)
         print 'inited'
 
     def print_stats(self):

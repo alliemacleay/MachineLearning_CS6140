@@ -13,21 +13,24 @@ class Errors(object):
 
     @property
     def df(self):
-        return pandas.DataFrame({'iteration': self.error_matrix[0].keys(), 'error': self.error_matrix[0].values()})
+        data = {}
+        data = {'iteration': self.error_matrix[0].keys(), 'error_train': self.error_matrix[0].values()}
+        for i in range(1, len(self.error_matrix)):
+            key = 'error_test' if i==1 else 'error' + str(i)
+            data[key] = self.error_matrix[i].values()
+        return pandas.DataFrame(data)
 
     def plot_all_errors(self, path):
         #print self.error_matrix[0]
 
         robjects.r['pdf'](path, width=14, height=8)
 
-        #df = pandas.DataFrame({'iteration': range(1, len(self.error_matrix[0])), 'error': self.error_matrix[0]})
-        #df = pandas.DataFrame({'fpr': range(10), 'tpr': range(10), 'theta': range(10)})
-        df = self.df
-        #print(df)
+        df = pandas.melt(self.df, id_vars='iteration')
         gp = ggplot2.ggplot(convert_to_r_dataframe(df, strings_as_factors=True))
-        gp += ggplot2.aes_string(x='iteration', y='error')
-        gp += ggplot2.geom_line(color='blue')
+        x_col = 'iteration'
+        gp += ggplot2.aes_string(x=x_col, y='value', color='variable')
         gp += ggplot2.geom_point(size=2)
+        gp += ggplot2.geom_line()
         gp.plot()
 
 
@@ -57,9 +60,14 @@ class ROC(object):
                     tn += 1
                 else:
                     fn += 1
-        self.tpr.append(float(tp)/(tp + fn))
-        self.fpr.append(float(fp)/(fp + tn))
-        self.thetas.append(theta)
+        if tp+fn == 0 or (fp + tn)==0:
+            self.tpr.append(0)
+            self.fpr.append(0)
+            self.tpr.append(theta)
+        else:
+            self.tpr.append(float(tp)/(tp + fn))
+            self.fpr.append(float(fp)/(fp + tn))
+            self.thetas.append(theta)
 
     def add_tpr_fpr_arrays(self, tpr, fpr, thetas=None):
         if thetas is None:

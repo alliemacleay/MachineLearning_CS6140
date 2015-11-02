@@ -33,6 +33,8 @@ import CS6140_A_MacLeay.Homeworks.HW3 as hw3
 import CS6140_A_MacLeay.Homeworks.HW4 as hw4
 import CS6140_A_MacLeay.Homeworks.HW4.plots as plt
 import CS6140_A_MacLeay.Homeworks.HW4.data_load as dl
+from sklearn.tree import DecisionTreeClassifier
+
 import os
 import CS6140_A_MacLeay.utils as utils
 import CS6140_A_MacLeay.utils.Stats as mystats
@@ -47,7 +49,7 @@ def q1():
         kf_data, kf_test = dl.get_train_and_test(all_folds, i)
         y, X = hw4.split_truth_from_data(kf_data)
         y_test, X_test = hw4.split_truth_from_data(kf_test)
-        adaboost = adab.AdaboostOptimal(50)
+        adaboost = adab.AdaboostOptimal(5, learner=lambda: DecisionTreeClassifier(max_depth=1))
         adaboost.fit(X, y, X_test, y_test)
         adaboost.print_stats()
         predicted = adaboost.predict(X)

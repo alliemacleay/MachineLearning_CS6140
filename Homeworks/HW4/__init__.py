@@ -5,6 +5,12 @@ import numpy as np
 import pandas as pd
 import CS6140_A_MacLeay.utils.Stats as mystats
 
+class mockStump(object):
+    def __init__(self, feature, threshold):
+        self.feature = [feature, -2, -2]
+        self.threshold = [threshold, -2, -2]
+
+
 class Tree(object):
     def __init__(self, max_depth=3):
         self.presence_array = None
@@ -15,15 +21,17 @@ class Tree(object):
         self.leaves = []
         self.max_depth = max_depth
         self.weights = None
+        self.tree_ = None
 
-    def fit(self, X, y, d=None):  # d is weights
+    def fit(self, X, y, sample_weight=None):  # d is weights
         self.presence_array = np.ones(len(X))
-        if d is None:
-            d = np.ones(len(X))
-        self.weights = d
+        if sample_weight is None:
+            sample_weight = np.ones(len(X))
+        self.weights = sample_weight
         self.possible_thresholds = self.get_initial_thresholds(X)
         self.head = self.initialize_branch(X, y)
         self.grow_tree(self.head, X, y, self.max_depth)
+        self.tree_ = mockStump(self.head.feature, self.head.threshold)
         self.print_tree()
 
     def predict(self, X):
