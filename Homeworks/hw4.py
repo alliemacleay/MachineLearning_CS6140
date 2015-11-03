@@ -1,4 +1,6 @@
 from sklearn.metrics import roc_auc_score
+from sklearn.ensemble import GradientBoostingRegressor
+import CS6140_A_MacLeay.utils.Stats as mystats
 
 __author__ = 'Allison MacLeay'
 
@@ -33,8 +35,10 @@ import CS6140_A_MacLeay.Homeworks.HW3 as hw3
 import CS6140_A_MacLeay.Homeworks.HW4 as hw4
 import CS6140_A_MacLeay.Homeworks.HW4.plots as plt
 import CS6140_A_MacLeay.Homeworks.HW4.data_load as dl
+import CS6140_A_MacLeay.Homeworks.HW4.bagging as bag
 import CS6140_A_MacLeay.utils.Adaboost_compare as adac
-from sklearn.tree import DecisionTreeClassifier
+import CS6140_A_MacLeay.utils.GradientBoost as gradb
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import numpy as np
 
 import os
@@ -173,6 +177,48 @@ def q4():
     """
     ECOC
     """
+    news, features = dl.data_q4()
+    ft_index = dl.index_features(features)
+    settings = dl.metadata_q4()
+    print len(settings.keys())
+    label_settings = dl.metadata_q4_labels()
+    print len(label_settings.keys())
+    feature_list = int(np.random.random(20) * 1754)
+    sub, indeces = dl.get_data_with_ft(news, ft_index, feature_list)
+
+
+def q6():
+    """ Bagging - sample with replacement """
+    spamData = hw3.pandas_to_data(hw3.load_and_normalize_spambase())
+    y, X = hw4.split_truth_from_data(spamData)
+    bagged = bag.Bagging(max_rounds=100, sample_size=1000, learner=lambda: DecisionTreeClassifier(max_depth=3))
+    bagged.fit(X, y)
+    kf_fold = hw4.partition_folds(spamData, .4)
+    test_y, test_X = hw4.split_truth_from_data(kf_fold[0])
+    test_pred = bagged.predict(test_X)
+    test_y = bagged._check_y(test_y)
+    test_pred = bagged._check_y(test_pred)
+    test_error = float(sum([0 if py == ty else 1 for py, ty in zip(test_pred, test_y)]))/len(test_y)
+    print 'Final testing error: {}'.format(test_error)
+
+def q7():
+    h_test, h_train = utils.load_and_normalize_housing_set()
+    housingData_test = hw3.pandas_to_data(h_test)
+    housingData_train = hw3.pandas_to_data(h_train)
+    y, X = hw4.split_truth_from_data(housingData_train)
+    y_test, X_test = hw4.split_truth_from_data(housingData_test)
+    #gb = GradientBoostingRegressor(learning_rate=.1, n_estimators=1, max_depth=1)
+    gb = gradb.GradientBoostRegressor(learning_rate=.1, n_estimators=5, max_depth=1, learner=lambda: DecisionTreeRegressor(max_depth=1))
+    gb.fit(X, y)
+    gb.print_stats()
+    yhat = gb.predict(X)
+    print y[:10]
+    print yhat[:10]
+    print 'MSE: {}'.format(hw4.compute_mse(y, yhat))
+
+
+
+
 
 
 

@@ -424,6 +424,10 @@ def partition_folds_q4(data, percentage):
         array[2].append(data[idx_arr[i]])
     return array
 
+def compute_mse(yhat, y):
+    sumy = sum([(yh-yo)**2 for yh, yo in zip(yhat, y)])
+    return float(sumy)/len(y)
+
 
 
 

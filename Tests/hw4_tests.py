@@ -161,4 +161,7 @@ if __name__ == '__main__':
     #hw4.q1()
     #UnitTests()
     #hw4.q2()
-    hw4.q3()
+    #hw4.q3()
+    #hw4.q4()
+    #hw4.q6()
+    hw4.q7()

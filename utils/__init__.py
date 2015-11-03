@@ -19,13 +19,13 @@ def load_and_normalize_housing_set_preserve_result_col():
     train, test = normalize_train_and_test(train, test, 'MEDV')
     return test, train
 
-def load_and_normalize_housing_set():
+def load_and_normalize_housing_set(skip='MEDV'):
     path = '../data/housing'
     test_file = "housing_test.txt"
     train_file = "housing_train.txt"
     test = read_housing_file(os.path.join(path, test_file))
     train = read_housing_file(os.path.join(path, train_file))
-    train, test = normalize_train_and_test(train, test, 'MEDV')
+    train, test = normalize_train_and_test(train, test, skip)
     return test, train
 
 def load_perceptron_data():
