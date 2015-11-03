@@ -33,7 +33,9 @@ import CS6140_A_MacLeay.Homeworks.HW3 as hw3
 import CS6140_A_MacLeay.Homeworks.HW4 as hw4
 import CS6140_A_MacLeay.Homeworks.HW4.plots as plt
 import CS6140_A_MacLeay.Homeworks.HW4.data_load as dl
+import CS6140_A_MacLeay.utils.Adaboost_compare as adac
 from sklearn.tree import DecisionTreeClassifier
+import numpy as np
 
 import os
 import CS6140_A_MacLeay.utils as utils
@@ -49,24 +51,74 @@ def q1():
         kf_data, kf_test = dl.get_train_and_test(all_folds, i)
         y, X = hw4.split_truth_from_data(kf_data)
         y_test, X_test = hw4.split_truth_from_data(kf_test)
-        adaboost = adab.AdaboostOptimal(5, learner=lambda: DecisionTreeClassifier(max_depth=1))
-        adaboost.fit(X, y, X_test, y_test)
-        adaboost.print_stats()
+        adaboost = run_adaboost(X, y, X_test, y_test, i)
         predicted = adaboost.predict(X)
         print(roc_auc_score(y, predicted))
+        for i in range(len(adaboost.snapshots)):
+            round_number = i + 1
+            ab = adaboost.snapshots[i]
+            yt_pred = ab.predict(X_test)
+            round_err = float(np.sum([1 if yt==yp else 0 for yt, yp in zip(yt_pred, y_test)]))/len(y_test)
+            adaboost.adaboost_error_test[round_number] = round_err
         print predicted[:20]
         print y[:20]
+        name = 'q1'
         directory = '/Users/Admin/Dropbox/ML/MachineLearning_CS6140/CS6140_A_MacLeay/Homeworks'
-        path = os.path.join(directory, 'hw4errors.pdf')
+        path = os.path.join(directory, name + 'hw4errors.pdf')
+        tterrpath = os.path.join(directory, name + 'hw4_errors_test_train.pdf')
         print path
         plt.Errors([adaboost.local_errors]).plot_all_errors(path)
+        plt.Errors([adaboost.adaboost_error, adaboost.adaboost_error_test]).plot_all_errors(tterrpath)
         roc = plt.ROC()
-        roc.add_tpr_fpr_arrays(adaboost.tpr.values(), adaboost.fpr.values())
-        roc.plot_ROC(os.path.join(directory, 'hw4_roc.pdf'))
+        #roc.add_tpr_fpr_arrays(adaboost.tpr.values(), adaboost.fpr.values())
+        get_tpr_fpr(adaboost, roc, X_test, y_test, 30)
+        roc.plot_ROC(os.path.join(directory, name + 'hw4_roc.pdf'))
+
+def run_adaboost(X, y, X_test=None, y_test=None, name='q1'):  #c% for fold sizes
+    """data
+       c is percentage for subset size
+       name for plot files
+    """
+    adaboost = adac.AdaboostOptimal(100, learner=lambda: DecisionTreeClassifier(max_depth=1))
+    #adaboost = adac.AdaboostOptimal(100, learner=lambda: DecisionTreeClassifier(max_depth=1, splitter="random"))
+    adaboost.fit(X, y) #, X_test, y_test)
+    adaboost.print_stats()
+    # Compute train & test AUCs at each round
+    #for idx, ab in enumerate(adaboost.snapshots):
+    #    if ab is not None:
+    #        print("round {}: Train AUC={:.3f}. Test AUC={:.3f}".format(idx + 1, roc_auc_score(y, ab.predict(X)),
+    #                                                               roc_auc_score(y_test, ab.predict(X_test))))
+
+    return adaboost
+
+
+def get_tpr_fpr(model, plot, X, y, num_points):
+    for ti in range(num_points + 2):
+        theta = ti * 1./(num_points + 1)
+        predict = model.predict(X, theta)
+        plot.add_tp_tn(predict, y, theta)
 
 def q2():
     """Boosting on UCI datasets"""
-    pass
+    #crx = dl.data_q3_crx()
+    crx = dl.data_q3_vote()
+    num_points = len(crx)
+    for i in xrange(5, 85, 5):
+        percent = float(i)/100
+        all_folds = hw4.partition_folds(crx, percent)
+        kf_train = all_folds[0]
+        kf_test = all_folds[1]
+        y, X = hw4.split_truth_from_data(kf_train)
+        y_test, X_test = hw4.split_truth_from_data(kf_test)
+        adaboost = run_adaboost(X, y, X_test, y_test, 'q2_crx')
+        yt_pred = adaboost.predict(X_test)
+        yt_pred = adaboost._check_y(yt_pred)
+        y_test = adaboost._check_y(y_test)
+        round_err = float(np.sum([1 if yt!=yp else 0 for yt, yp in zip(yt_pred, y_test)]))/len(y_test)
+        last_round = adaboost.local_errors.keys()[-1]
+        #print 'Error at {}%: Train: {} Test: {}'.format(percent, adaboost.adaboost_error[last_round], round_err)
+        print 'Error at {}%: Test: {}'.format(percent, round_err)
+
 
 def q3():
     """Run your code from PB1 on Spambase dataset to perform Active Learning.
@@ -83,7 +135,39 @@ def q3():
     with c% actively-built training set for several values of c : 5, 10, 15, 20,
     30, 50.
     """
-    pass
+    spamData = hw3.pandas_to_data(hw3.load_and_normalize_spambase())
+    percent = .05
+    all_folds = hw4.partition_folds_q4(spamData, percent)
+    kf_train = all_folds[0]
+    kf_test = all_folds[1]
+    left_over = all_folds[2]
+
+    while len(kf_train) < len(spamData)/2:
+        y, X = hw4.split_truth_from_data(kf_train)
+        y_test, X_test = hw4.split_truth_from_data(kf_test)
+        adaboost = run_adaboost(X, y, X_test, y_test, 'q2_crx')
+
+        yt_pred = adaboost.predict(X_test)
+        order = adaboost.rank(X_test)
+        yt_pred = adaboost._check_y(yt_pred)
+        y_test = adaboost._check_y(y_test)
+        round_err = float(np.sum([1 if yt!=yp else 0 for yt, yp in zip(yt_pred, y_test)]))/len(y_test)
+
+        print 'Error {}'.format(round_err)
+        shift_number = int(len(order) * .02)  # number of items to switch into training set
+        mask = []
+        for i in xrange(shift_number):
+            mask.append(order[i])
+            kf_train.append(kf_test[order[i]])
+        new_test = [kf_test[i] for i in range(len(kf_test)) if i not in mask]
+        for i in xrange(len(mask)):
+            new_test.append(left_over[i])
+        left_over = left_over[len(mask):]
+        kf_test = new_test[:]
+        print 'test len {} train len {} leftover len {} shifting {}'.format(len(kf_test), len(kf_train), len(left_over), shift_number)
+
+
+
 
 def q4():
     """

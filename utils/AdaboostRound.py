@@ -8,7 +8,7 @@ import numpy as np
 
 class BoostRound():
     def __init__(self, adaboost, round_number):
-        self.learner = adaboost.learners[round_number]
+        self.learner = adaboost.learner
         self.error = 1  # unweighted error
         self.errors_weighted = []  # weighted errors before normalization
         self.weight_distribution = []  # Dt(x)

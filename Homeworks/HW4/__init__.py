@@ -402,6 +402,28 @@ def split_truth_from_data(data):
             truth_rows[i] = -1
     return truth_rows, data_rows
 
+def partition_folds(data, percentage):
+    num = int(len(data) * percentage)
+    array = [[], []]
+    for set in [0, 1]:
+        idx_arr = np.arange(len(data))
+        np.random.shuffle(idx_arr)
+        for i in xrange(int(len(data)*percentage)):
+            array[set].append(data[idx_arr[i]])
+    return array
+
+def partition_folds_q4(data, percentage):
+    num = int(len(data) * percentage)
+    idx_arr = np.arange(len(data))
+    np.random.shuffle(idx_arr)
+    array = [[], [], []]
+    data_size = int(len(data)*percentage) * 2
+    for i in xrange(data_size):
+        array[i%2].append(data[idx_arr[i]])
+    for i in xrange(data_size, len(data)):
+        array[2].append(data[idx_arr[i]])
+    return array
+
 
 
 

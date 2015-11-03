@@ -56,13 +56,13 @@ class ROC(object):
                 else:
                     fp += 1
             else:
-                if val == truth[p]:
+                if val != 1 and truth[p] != 1:  # fix for 0 vs -1
                     tn += 1
                 else:
                     fn += 1
         if tp+fn == 0 or (fp + tn)==0:
-            self.tpr.append(0)
-            self.fpr.append(0)
+            self.tpr.append(0.)
+            self.fpr.append(0.)
             self.tpr.append(theta)
         else:
             self.tpr.append(float(tp)/(tp + fn))

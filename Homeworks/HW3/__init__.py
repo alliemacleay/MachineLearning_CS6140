@@ -185,7 +185,7 @@ class GDA():
 
 
 def partition_folds(data, k):
-    #TODO - is this wrong??
+    k = int(k)
     if k == 1:
         return [data]
     if len(data) > k:
@@ -193,7 +193,9 @@ def partition_folds(data, k):
     else:
         array = [[] for _ in range(len(data))]
     #array = []
-    for i in range(len(data)):
+    idx_arr = np.arange(len(data))
+    np.random.shuffle(idx_arr)
+    for i in idx_arr:
         array[i % k].append(data[i])
     return array
 
