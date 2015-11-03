@@ -208,7 +208,7 @@ def q7():
     y, X = hw4.split_truth_from_data(housingData_train)
     y_test, X_test = hw4.split_truth_from_data(housingData_test)
     #gb = GradientBoostingRegressor(learning_rate=.1, n_estimators=1, max_depth=1)
-    gb = gradb.GradientBoostRegressor(learning_rate=.1, n_estimators=5, max_depth=1, learner=lambda: DecisionTreeRegressor(max_depth=1))
+    gb = gradb.GradientBoostRegressor(learning_rate=.1, n_estimators=207, max_depth=1, learner=lambda: DecisionTreeRegressor(max_depth=1))
     gb.fit(X, y)
     gb.print_stats()
     yhat = gb.predict(X)

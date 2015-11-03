@@ -17,30 +17,27 @@ class GradientBoostRegressor(object):
         self.local_error = []
 
     def fit(self, X, y):
-        original_y = y[:]
+        X = np.asarray(X)
+        y = np.asarray(y)
+
         self.mean = np.mean(y)
-        last_y = [self.mean for _ in range(len(y))]
         for round in xrange(self.max_rounds):
-            residual = [-1. *(yn - yl) for yn, yl in zip(y, last_y)]
+            residual = [(yn - yl) for yn, yl in zip(y, self.predict(X))]
             hypothesis = self.learner().fit(X, residual)
-            y = hypothesis.predict(X)
-            last_y = [yn + self.mean for yn in y]
-            self.local_error.append(hw4.compute_mse(last_y, original_y))
             self.hypotheses.append(hypothesis)
+
+            self.local_error.append(hw4.compute_mse(residual, hypothesis.predict(X)))
+
             pred_round = self.predict(X)
-            self.train_score = hw4.compute_mse(pred_round, original_y)
+            self.train_score = hw4.compute_mse(pred_round, y)
             self.training_error.append(self.train_score)
 
-
     def predict(self, X):
-        predictions = []
-        p_sum = np.zeros(len(X))
+        X = np.asarray(X)
+        predictions = np.array([self.mean] * X.shape[0])
         for h in self.hypotheses:
-            predictions.append(h.predict(X))
-        for pred_array in predictions:
-            for p in range(len(pred_array)):
-                p_sum[p] += pred_array[p]
-        return [self.mean + p for p in p_sum]
+            predictions += h.predict(X)
+        return predictions
 
     def print_stats(self):
         for r in range(len(self.training_error)):
