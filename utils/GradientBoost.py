@@ -21,6 +21,9 @@ class GradientBoostRegressor(object):
         y = np.asarray(y)
 
         self.mean = np.mean(y)
+        #y = np.asarray([self.mean]*len(y))
+        #hypothesis = self.learner().fit(X, y)
+        #self.hypotheses.append(hypothesis)
         for round in xrange(self.max_rounds):
             residual = [(yn - yl) for yn, yl in zip(y, self.predict(X))]
             hypothesis = self.learner().fit(X, residual)
@@ -34,14 +37,15 @@ class GradientBoostRegressor(object):
 
     def predict(self, X):
         X = np.asarray(X)
-        predictions = np.array([self.mean] * X.shape[0])
+        #predictions = np.array([self.mean] * X.shape[0])
+        predictions = np.zeros(len(X))
         for h in self.hypotheses:
             predictions += h.predict(X)
         return predictions
 
     def print_stats(self):
         for r in range(len(self.training_error)):
-            print 'Round {}: local error: {} training error: {}'.format(r, self.local_error[r], self.training_error[r])
+            print 'Round {}: training error: {}'.format(r, self.local_error[r], self.training_error[r])
 
 
 
