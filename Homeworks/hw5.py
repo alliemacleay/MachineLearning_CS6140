@@ -56,7 +56,7 @@ def q2():
     standard deviation for some columns is 0
     """
     data = utils.load_and_normalize_polluted_spam_data()
-    #data, _ = utils.random_sample(data, None, 20)
+    data, _ = utils.random_sample(data, None, 20)
     GaussianNB(data)
 
 

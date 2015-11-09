@@ -181,11 +181,11 @@ def q4():
     X_train, y_train = ecoc.parse_8newsgroup("data/8newsgroup/train.trec")
     X_test, y_test = ecoc.parse_8newsgroup("data/8newsgroup/test.trec")
 
-    cls = ecoc.ECOCClassifier(learner=lambda: adac.AdaboostOptimal(learner=lambda: DecisionTreeClassifier(max_depth=1), max_rounds=100), #LogisticRegression,  # TODO: replace with AdaBoost
+    cls = ecoc.ECOCClassifier(learner=lambda: adac.AdaboostOptimal(learner=lambda: DecisionTreeClassifier(max_depth=1), max_rounds=200), #LogisticRegression,  # TODO: replace with AdaBoost
     #cls = ecoc.ECOCClassifier(learner=LogisticRegression,  # TODO: replace with AdaBoost
                          verbose=True,
-                         #encoding_type='exhaustive').fit(X_train, y_train)
-                         encoding_type='one_vs_all').fit(X_train, y_train)
+                         encoding_type='exhaustive').fit(X_train, y_train)
+                         #encoding_type='one_vs_all').fit(X_train, y_train)
     for set_name, X, y in [('train', X_train, y_train),
                            ('test', X_test, y_test)]:
         print("Set: {}. Accuracy: {:.3f}".format(set_name, accuracy_score(y, cls.predict(X))))

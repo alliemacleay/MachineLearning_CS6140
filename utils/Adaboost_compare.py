@@ -64,7 +64,9 @@ class AdaboostOptimal(object):
             y = np.array(y)
             self.local_errors[round_number + 1] = float(np.sum([y==y_pred]))/y.shape[0]
 
-            error = np.sum(w * (y!=y_pred))
+            error = np.sum(w[y!=y_pred])
+            #error = np.sum(w * (y!=y_pred))
+
 
             w[y == y_pred] *= error / (1.0 - error)
             w /= np.sum(w)
@@ -74,16 +76,16 @@ class AdaboostOptimal(object):
             self.alpha.append(np.log((1 - error) / error) if error > 0 else 1.0)
             #self.snapshots.append(self.clone())
 
-            train_y = self.predict(X)
-            y = self._check_y(y)
-            train_y = self._check_y(train_y)
-            self.adaboost_error[round_number + 1] = float(np.sum([y == train_y]))/y.shape[0]
+            #train_y = self.predict(X)
+            #y = self._check_y(y)
+            #train_y = self._check_y(train_y)
+            #self.adaboost_error[round_number + 1] = float(np.sum([y == train_y]))/y.shape[0]
 
-            m = sum([wi * py for wi, py in zip(w, self._check_y_not_zero(train_y))])
+            #m = sum([wi * py for wi, py in zip(w, self._check_y_not_zero(train_y))])
 
-            self.abs_sum_alpha += np.abs(sum(w))
-            self.feature_margin = float(m)/self.abs_sum_alpha
-            self.margin += m
+            #self.abs_sum_alpha += np.abs(sum(w))
+            #self.feature_margin = float(m)/self.abs_sum_alpha
+            #self.margin += m
 
             if self.verbose:
                 print("round {}: error={:.2f}. alpha={:.2f}. AUC={:.3f}".format(

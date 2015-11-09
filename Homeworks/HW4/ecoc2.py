@@ -2,6 +2,7 @@ import re
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import CS6140_A_MacLeay.utils.Adaboost as adar
+import CS6140_A_MacLeay.utils.Adaboost_compare as adac
 import pandas as pd
 import os
 from sklearn.feature_selection import SelectKBest
@@ -23,6 +24,7 @@ def get_bits(val, length):
 class ECOCClassifier(object):
     """Implements multiclass prediction for any binary learner using Error Correcting Codes"""
     def __init__(self, learner=adar.AdaboostRandom, verbose=False, encoding_type='exhaustive'):
+        #def __init__(self, learner=adac.AdaboostOptimal, verbose=False, encoding_type='exhaustive'):
         """\
         :param learner: binary learner to use
         """
@@ -162,7 +164,7 @@ def cached(func):
         X, y = func(*args, **kwargs)
         global q4_slct
         if q4_slct is None:
-            q4_slct = SelectKBest(k=100).fit(X, y)
+            q4_slct = SelectKBest(k=200).fit(X, y)
         X = q4_slct.transform(X)
         return X, y
     return inner
