@@ -10,13 +10,14 @@ from CS6140_A_MacLeay.utils.Stats import multivariate_normal
 def load_and_normalize_spambase():
     return utils.load_and_normalize_spam_data()
 
-def pandas_to_data(df):
+def pandas_to_data(df, remove_nan='True'):
     array = []
     for i in range(len(df)):  # row
         row = df.iloc[i]
         row_array = []
         for j in range(len(row)):
-            row_array.append(row[j])
+            if not remove_nan or not any(np.isnan(row)):
+                row_array.append(row[j])
         array.append(row_array)
     return array
 
@@ -231,10 +232,14 @@ def get_std_dev(data):
     std_dev = []
     by_col = transpose_array(data)
     for col in by_col:
-        std_dev.append(np.std(col))
+        sd = np.std(col)
+        if sd == 0:
+            print col
+            print "ERROR: standard dev is 0!"
+        std_dev.append(sd)
     return std_dev
 
-def univariate_normal(data, std_dev, mus, prob_y, alpha=1):
+def univariate_normal(data, std_dev, mus, prob_y, alpha=1, ignore_cols=[]):
         """
         :row: one row
         :param std_dev:  array by col
@@ -242,12 +247,17 @@ def univariate_normal(data, std_dev, mus, prob_y, alpha=1):
         :return: probability
         """
         row_probability = []
+        if len(std_dev) == 0:
+            return 0
+        num_std_devs = 1e-10 if len(std_dev) == 0 else len(std_dev)
         # 1/(std_dev * sqrt(2*pi) ) exp( -1 * (x-mu)**2 / 2 * std_dev**2 )
-        epsilon = 1. * alpha/len(std_dev)
+        epsilon = 1. * alpha/num_std_devs
         prob_const = 1./ np.sqrt(2 * np.pi)
         for row in data: # for each row
             prob = 1
-            for j in range(len(row)):
+            for j in range(len(std_dev)):
+                if j in ignore_cols:
+                    continue
                 std_devj = std_dev[j] + epsilon
                 xj = row[j]
                 epow = -1 * (xj - mus[j])**2 / (2 * std_devj**2)

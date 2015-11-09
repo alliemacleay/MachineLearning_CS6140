@@ -4,6 +4,7 @@ from sklearn.linear_model import LogisticRegression
 import CS6140_A_MacLeay.utils.Adaboost as adar
 import pandas as pd
 import os
+from sklearn.feature_selection import SelectKBest
 
 __author__ = ''
 
@@ -155,7 +156,18 @@ class ECOCClassifier(object):
         df['y'] = self.ordered_y
         return pd.DataFrame(df, columns=['y'] + bit_columns)
 
+q4_slct = None
+def cached(func):
+    def inner(*args, **kwargs):
+        X, y = func(*args, **kwargs)
+        global q4_slct
+        if q4_slct is None:
+            q4_slct = SelectKBest(k=100).fit(X, y)
+        X = q4_slct.transform(X)
+        return X, y
+    return inner
 
+@cached
 def parse_8newsgroup(path):
     """Parses 8newsgroup data from a directory, returning X and y"""
     mat_path = os.path.join(path, "feature_matrix.txt")

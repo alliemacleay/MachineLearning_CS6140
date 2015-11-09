@@ -1,6 +1,7 @@
-from sklearn.metrics import roc_auc_score
-from sklearn.ensemble import GradientBoostingRegressor
-import CS6140_A_MacLeay.utils.Stats as mystats
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score, accuracy_score
+import CS6140_A_MacLeay.Homeworks.HW4.ecoc2 as ecoc
+import CS6140_A_MacLeay.utils.Adaboost as adar
 
 __author__ = 'Allison MacLeay'
 
@@ -30,7 +31,6 @@ Decision stump - feature (fi) threshold (tij)  pair
         test AUC
 """
 
-import CS6140_A_MacLeay.utils.Adaboost as adab
 import CS6140_A_MacLeay.Homeworks.HW3 as hw3
 import CS6140_A_MacLeay.Homeworks.HW4 as hw4
 import CS6140_A_MacLeay.Homeworks.HW4.plots as plt
@@ -104,8 +104,8 @@ def get_tpr_fpr(model, plot, X, y, num_points):
 
 def q2():
     """Boosting on UCI datasets"""
-    #crx = dl.data_q3_crx()
-    crx = dl.data_q3_vote()
+    crx = dl.data_q3_crx()
+    #crx = dl.data_q3_vote()
     num_points = len(crx)
     for i in xrange(5, 85, 5):
         percent = float(i)/100
@@ -177,14 +177,18 @@ def q4():
     """
     ECOC
     """
-    news, features = dl.data_q4()
-    ft_index = dl.index_features(features)
-    settings = dl.metadata_q4()
-    print len(settings.keys())
-    label_settings = dl.metadata_q4_labels()
-    print len(label_settings.keys())
-    feature_list = int(np.random.random(20) * 1754)
-    sub, indeces = dl.get_data_with_ft(news, ft_index, feature_list)
+
+    X_train, y_train = ecoc.parse_8newsgroup("data/8newsgroup/train.trec")
+    X_test, y_test = ecoc.parse_8newsgroup("data/8newsgroup/test.trec")
+
+    cls = ecoc.ECOCClassifier(learner=lambda: adac.AdaboostOptimal(learner=lambda: DecisionTreeClassifier(max_depth=1), max_rounds=100), #LogisticRegression,  # TODO: replace with AdaBoost
+    #cls = ecoc.ECOCClassifier(learner=LogisticRegression,  # TODO: replace with AdaBoost
+                         verbose=True,
+                         #encoding_type='exhaustive').fit(X_train, y_train)
+                         encoding_type='one_vs_all').fit(X_train, y_train)
+    for set_name, X, y in [('train', X_train, y_train),
+                           ('test', X_test, y_test)]:
+        print("Set: {}. Accuracy: {:.3f}".format(set_name, accuracy_score(y, cls.predict(X))))
 
 
 def q6():
@@ -208,13 +212,13 @@ def q7():
     y, X = hw4.split_truth_from_data(housingData_train)
     y_test, X_test = hw4.split_truth_from_data(housingData_test)
     #gb = GradientBoostingRegressor(learning_rate=.1, n_estimators=1, max_depth=1)
-    gb = gradb.GradientBoostRegressor(learning_rate=.1, n_estimators=207, max_depth=1, learner=lambda: DecisionTreeRegressor(max_depth=1))
+    gb = gradb.GradientBoostRegressor(learning_rate=.1, n_estimators=100, max_depth=1, learner=lambda: DecisionTreeRegressor(max_depth=1))
     gb.fit(X, y)
     gb.print_stats()
-    yhat = gb.predict(X)
-    print y[:10]
+    yhat = gb.predict(X_test)
+    print y_test[:10]
     print yhat[:10]
-    print 'MSE: {}'.format(hw4.compute_mse(y, yhat))
+    print 'MSE: {}'.format(hw4.compute_mse(y_test, yhat))
 
 
 

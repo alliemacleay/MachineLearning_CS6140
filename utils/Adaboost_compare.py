@@ -19,6 +19,10 @@ class AdaboostOptimal(object):
         self.adaboost_error_test = {}
         self.local_errors = {}
 
+        self.margin = 0
+        self.feature_margin = 0
+        self.abs_sum_alpha = 0
+
     def print_stats(self):
         pass
 
@@ -36,6 +40,15 @@ class AdaboostOptimal(object):
         else:
             raise ValueError("Bad labels. Expected either 0/1 or -1/1, but got: {}".format(sorted(set(y))))
 
+    def _check_y_not_zero(self, y):
+        if {1, 0}.issubset(set(y)):
+            return [1 if yi == 1 else -1 for yi in y]
+        elif {-1, 1}.issubset(set(y)):
+            return y
+        else:
+            raise ValueError("Bad labels. Expected either 0/1 or -1/1, but got: {}".format(sorted(set(y))))
+
+
     def fit(self, X, y):
         y = self._check_y(np.asarray(y))
         X = np.asarray(X)
@@ -45,24 +58,32 @@ class AdaboostOptimal(object):
             #print w
             current_hypothesis = self.learner().fit(X, y, sample_weight=w)
             y_pred = current_hypothesis.predict(X)
+            #if round_number % 10 == 0:
+            #    print round_number
 
-            self.local_errors[round_number + 1] = float(np.sum([1 if yt==yp else 0 for yt, yp in zip(y, y_pred)]))/len(y)
+            y = np.array(y)
+            self.local_errors[round_number + 1] = float(np.sum([y==y_pred]))/y.shape[0]
 
-            error = np.sum([wj if yp != yt else 0 for wj, yt, yp in zip(w, y, y_pred)])
+            error = np.sum(w * (y!=y_pred))
 
-            w = [wj * error / (1.0 - error) if yp == yt else wj for wj, yt, yp in zip(w, y, y_pred)]
+            w[y == y_pred] *= error / (1.0 - error)
             w /= np.sum(w)
 
-            self.stump.append(hw4.DecisionStump(current_hypothesis.tree_.feature[0], current_hypothesis.tree_.threshold[0]))
+            #self.stump.append(hw4.DecisionStump(current_hypothesis.tree_.feature[0], current_hypothesis.tree_.threshold[0]))
             self.hypotheses.append(current_hypothesis)
             self.alpha.append(np.log((1 - error) / error) if error > 0 else 1.0)
-            self.snapshots.append(self.clone())
+            #self.snapshots.append(self.clone())
 
             train_y = self.predict(X)
             y = self._check_y(y)
             train_y = self._check_y(train_y)
-            self.adaboost_error[round_number + 1] = float(np.sum([1 if yt!=yp else 0 for yt, tp in zip(y, train_y)]))/len(y)
+            self.adaboost_error[round_number + 1] = float(np.sum([y == train_y]))/y.shape[0]
 
+            m = sum([wi * py for wi, py in zip(w, self._check_y_not_zero(train_y))])
+
+            self.abs_sum_alpha += np.abs(sum(w))
+            self.feature_margin = float(m)/self.abs_sum_alpha
+            self.margin += m
 
             if self.verbose:
                 print("round {}: error={:.2f}. alpha={:.2f}. AUC={:.3f}".format(

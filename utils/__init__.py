@@ -56,9 +56,23 @@ def load_and_normalize_spam_data():
     spamData = normalize_data(spamData, 'is_spam')
     return spamData
 
+def load_and_normalize_polluted_spam_data(set='train'):
+    path = os.path.join('data/HW5', 'spam_polluted')
+    features = read_file_data(os.path.join(path, set + '_feature.txt'), max_rec=300)
+    features = remove_constant_column(features)
+    features = normalize_data(features, 'is_spam')
+    truth = read_file_data(os.path.join(path, set + '_label.txt'))
+    return add_row(features, truth)
+
 
 def remove_constant_column(df):
     varying_columns = []
+    if type(df) is list:
+        dt = transpose_array(df)
+        for i in range(len(dt)):
+            if len(set(dt[i])) > 1:
+                varying_columns.append(dt[i])
+        return transpose_array(varying_columns)
     for col in df.columns:
         if len(df[col].unique()) > 1:
             varying_columns.append(col)
@@ -106,13 +120,26 @@ def shift_and_scale(df, predict):
 
 def normalize_data(df, predict):
     # Will not normalize the column defined in 'predict'
-    for col in df.axes[1]:
-        if col is predict:
-            continue
-        min = df[col].min()
-        df[col] = df[col] - min
-        max = df[col].max()
-        df[col] = df[col]/max
+    if type(df) is list:
+        dt = transpose_array(df)
+        for j in range(len(dt)):
+            dt[j] = np.asarray(dt[j])
+            row = dt[j]
+            m = np.min(row)
+            jmin = [m] * len(row)
+            dt[j] -= jmin
+            m = np.max(dt[j])
+            jmax = [m] * len(row)
+            dt[j] /= jmax
+        df = transpose_array(dt)
+    else:
+        for col in df.axes[1]:
+            if col is predict:
+                continue
+            min = df[col].min()
+            df[col] = df[col] - min
+            max = df[col].max()
+            df[col] = df[col]/max
     return df
 
 def normalize_train_and_test(train, test, skip):
@@ -188,6 +215,29 @@ def read_file(f, delim=None):
     df = pd.DataFrame(text, dtype=np.float)
     return df
 
+def read_file_data(f, delim=None, max_rec=None):
+    text = []
+    with open(f, 'r') as fh:
+        for i, line in enumerate(fh):
+            text.append([])
+            txt = line.strip().split(delim)
+            if len(txt) > 0:
+                text[i] = check_type(txt)
+            if max_rec is not None and i > max_rec:
+                break
+    return text
+
+def add_row(X, y, remove_nans=True):
+    data = []
+    for i in range(len(X)):
+        row = X[i]
+        row.append(y[i][0])
+        #row = np.asarray(row)
+        if remove_nans and not any(np.isnan(row)):
+            data.append(row)
+    return data
+
+
 def to_col_vec(x):
     return x.reshape((len(x), 1))
 
@@ -262,4 +312,22 @@ def transpose_array(arr):
         for j in range(len(arr[i])):
             tarry[j].append(arr[i][j])
     return tarry
+
+def random_sample(array, y_arr=None, size=100):
+    """ return indeces """
+    idx = np.random.choice(range(len(array)), size=size)
+    data = [array[i] for i in idx]
+    if y_arr is not None:
+        y = [y_arr[i] for i in idx]
+    else:
+        y = None
+    return data, y
+
+def check_type(v):
+    for i in range(len(v)):
+        try:
+            v[i] = float(v[i])
+        except Exception as e:
+            print 'Data is type {} not float! (at {})'.format(type(v[i]), i)
+    return v
 

@@ -9,7 +9,7 @@ from copy import deepcopy
 
 
 class NaiveBayes():
-    def __init__(self, model_type, alpha=1):
+    def __init__(self, model_type, alpha=1, ignore_cols = []):
         self.model_type = model_type
         self.train_acc = 0
         self.test_acc = 0
@@ -19,7 +19,9 @@ class NaiveBayes():
         self.cutoffs = None
         self.y_prob = None
 
-    def train(self, data_rows, truth):
+        self.ignore_cols = ignore_cols
+
+    def train(self, data_rows, truth, ignore_cols=[]):
         self.data_length = len(data_rows)
         if self.model_type == 0:
             self.model = self.model_average_train(data_rows, truth)
@@ -139,8 +141,13 @@ class NaiveBayes():
         y_prob = self.model[2]
         probabilities = {}
         for label in [0, 1]:
+            if len(std_devs[label]) == 0:
+                print self.model
+                print 'Standard Deviations is empty!!!'
+                probabilities[label] = [0] * len(data)
+                continue
             prob_of_y = y_prob if label==1 else (1-y_prob)
-            probabilities[label] = hw3.univariate_normal(data, std_devs[label], mus[label], prob_of_y, .15)
+            probabilities[label] = hw3.univariate_normal(data, std_devs[label], mus[label], prob_of_y, .15, ignore_cols=self.ignore_cols)
 
         return self.nb_predict(probabilities, theta)
 
