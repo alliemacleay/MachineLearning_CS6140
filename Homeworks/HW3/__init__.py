@@ -233,9 +233,9 @@ def get_std_dev(data):
     by_col = transpose_array(data)
     for col in by_col:
         sd = np.std(col)
-        if sd == 0:
-            print col
-            print "ERROR: standard dev is 0!"
+        #if sd == 0:
+        #    print col
+        #    print "ERROR: standard dev is 0!"
         std_dev.append(sd)
     return std_dev
 

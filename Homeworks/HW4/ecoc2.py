@@ -4,8 +4,10 @@ from sklearn.linear_model import LogisticRegression
 import CS6140_A_MacLeay.utils.Adaboost as adar
 import CS6140_A_MacLeay.utils.Adaboost_compare as adac
 import pandas as pd
+import multiprocessing
 import os
 from sklearn.feature_selection import SelectKBest
+from sklearn.tree import DecisionTreeClassifier
 
 __author__ = ''
 
@@ -23,7 +25,7 @@ def get_bits(val, length):
 
 class ECOCClassifier(object):
     """Implements multiclass prediction for any binary learner using Error Correcting Codes"""
-    def __init__(self, learner=adar.AdaboostRandom, verbose=False, encoding_type='exhaustive'):
+    def __init__(self, learner=adac.AdaboostOptimal, verbose=False, encoding_type='exhaustive'):
         #def __init__(self, learner=adac.AdaboostOptimal, verbose=False, encoding_type='exhaustive'):
         """\
         :param learner: binary learner to use
@@ -124,12 +126,20 @@ class ECOCClassifier(object):
 
         self.classifiers = []
 
+        pool = multiprocessing.Pool()
+        async_results = []
+
         for function_idx in xrange(self.encoding_table.shape[1]):
+            encoded_y = self._encode_y(y, function_idx)
+            async_results.append(pool.apply_async(_fit_one, [X, encoded_y]))
+
+        pool.close()
+
+        for function_idx, result in zip(xrange(self.encoding_table.shape[1]), async_results):
             if self.verbose:
                 print('Fit function {}/{}'.format(function_idx + 1, self.encoding_table.shape[1]))
 
-            encoded_y = self._encode_y(y, function_idx)
-            self.classifiers.append(self.learner().fit(X, encoded_y))
+            self.classifiers.append(result.get())
 
         return self
 
@@ -197,6 +207,14 @@ def parse_8newsgroup(path):
             rows.append(row_data)
     X = np.array(rows)
     return X, y
+
+
+def _fit_one(X, y):
+    cls = adac.AdaboostOptimal(max_rounds=200, verbose=False,
+                               learner=lambda: DecisionTreeClassifier(max_depth=1))
+    cls.fit(X, y)
+    cls.learner = None
+    return cls
 
 
 

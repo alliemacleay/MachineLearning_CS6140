@@ -33,6 +33,7 @@ class Tree(object):
         self.grow_tree(self.head, X, y, self.max_depth)
         self.tree_ = mockStump(self.head.feature, self.head.threshold)
         self.print_tree()
+        return self
 
     def predict(self, X):
         self.head.predict(X)
@@ -82,12 +83,14 @@ class Tree(object):
             self.grow_tree(left, X, y, max_depth)
             self.grow_tree(right, X, y, max_depth)
         else:
-            if left is not None:
-                left.make_leaf(X, y)
-                self.leaves.append(left)
-            if right is not None:
-                right.make_leaf(X, y)
-                self.leaves.append(right)
+            #if left is not None:
+            #    left.make_leaf(X, y)
+            #    self.leaves.append(left)
+            #if right is not None:
+            #    right.make_leaf(X, y)
+            #    self.leaves.append(right)
+            this_branch.make_leaf(X, y)
+
 
     def print_tree(self):
         self.head.print_branch(True)
@@ -160,7 +163,7 @@ class Branch(object):
         #self.probability = float(y.count(1))/len(y)
 
     def update_leaf_status(self):
-        if len(set(self.data_subset[0])) < 2:
+        if len(self.data_subset) > 0 and len(set(self.data_subset[0])) < 2:
             self.converged = True
         if self.info_gain < self.theta:
             self.converged = True

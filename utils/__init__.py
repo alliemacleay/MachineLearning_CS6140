@@ -58,12 +58,35 @@ def load_and_normalize_spam_data():
 
 def load_and_normalize_polluted_spam_data(set='train'):
     path = os.path.join('data/HW5', 'spam_polluted')
-    features = read_file_data(os.path.join(path, set + '_feature.txt'), max_rec=300)
+    features = read_file_data(os.path.join(path, set + '_feature.txt')) #, max_rec=300)
     features = remove_constant_column(features)
     features = normalize_data(features, 'is_spam')
     truth = read_file_data(os.path.join(path, set + '_label.txt'))
     return add_row(features, truth)
 
+def load_and_fill_missing_spam_data(dset='train'):
+    path = 'data/HW5'
+    features = read_file_data(os.path.join(path, '20_percent_missing_' + dset + '.txt')) #, max_rec=300)
+    features = correct_missing(features)
+
+    features = remove_constant_column(features)
+    features = normalize_data(features, 'is_spam')
+    #truth = read_file_data(os.path.join(path, set + '_label.txt'))
+    return features
+
+def correct_missing(data, replace=1):
+    cor = []
+    for i in range(len(data)):
+        #row = [float[r] for r in data[i][0].split(',')]
+        row = data[i][0].split(',')
+        for j in range(len(row)):
+            r = float(row[j])
+            #if type(r) is str or np.isnan(r):
+            #    row[j] = r
+            #else:
+            #    row[j] = r
+        cor.append(row)
+    return cor
 
 def remove_constant_column(df):
     varying_columns = []
@@ -118,19 +141,23 @@ def shift_and_scale(df, predict):
         return df
 
 
-def normalize_data(df, predict):
-    # Will not normalize the column defined in 'predict'
+def normalize_data(df, predict, remove_nan=True):
+    # Will not normalize the column defined in 'predict')
     if type(df) is list:
         dt = transpose_array(df)
         for j in range(len(dt)):
             dt[j] = np.asarray(dt[j])
-            row = dt[j]
+            if remove_nan:
+                row, nans, dt[j] = find_and_remove_nans(dt[j])
+            else:
+                row = dt[j]
             m = np.min(row)
             jmin = [m] * len(row)
-            dt[j] -= jmin
-            m = np.max(dt[j])
+            row -= jmin
+            m = np.max(row)
             jmax = [m] * len(row)
-            dt[j] /= jmax
+            row /= jmax
+            dt[j] = replace_nans(row, dt[j], dt[-1], nans)
         df = transpose_array(dt)
     else:
         for col in df.axes[1]:
@@ -141,6 +168,36 @@ def normalize_data(df, predict):
             max = df[col].max()
             df[col] = df[col]/max
     return df
+
+def replace_nans(data, polluted, y, nans):
+    if len(nans) == 0:
+        return data
+    polluted = np.asarray(polluted, dtype=float)
+    y_1 = [x for x in polluted if x==1]
+    y_0 = [x for x in polluted if x!=1 and not np.isnan(x)]
+    py_1 = np.mean(y_1)
+    py_0 = np.mean(y_0)
+    for i in range(len(polluted)):
+        if np.isnan(polluted[i]):
+            polluted[i] = py_1 if y[i] == 1 else py_0
+    return polluted
+
+
+
+def find_and_remove_nans(data):
+    nan = []
+    cleaned = []
+    for i, x in enumerate(data):
+        try:
+            x = float(x)
+            data[i] = x
+        except Exception as e:
+            print e
+        if np.isnan(x):
+            nan.append(i)
+        else:
+            cleaned.append(x)
+    return np.asarray(cleaned), nan, np.asarray(data)
 
 def normalize_train_and_test(train, test, skip):
     # Will not normalize the column defined in 'skip'
@@ -231,8 +288,10 @@ def add_row(X, y, remove_nans=True):
     data = []
     for i in range(len(X)):
         row = X[i]
-        row.append(y[i][0])
-        #row = np.asarray(row)
+        if type(row) is np.ndarray:
+            row = list(row)
+        y_val = y[i] if type(y[i]) is float else y[i][0]
+        row.append(y_val)
         if remove_nans and not any(np.isnan(row)):
             data.append(row)
     return data
@@ -328,6 +387,7 @@ def check_type(v):
         try:
             v[i] = float(v[i])
         except Exception as e:
-            print 'Data is type {} not float! (at {})'.format(type(v[i]), i)
+            pass
+            #print 'Data is type {} not float! (at {})'.format(type(v[i]), i)
     return v
 

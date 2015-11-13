@@ -142,8 +142,8 @@ class NaiveBayes():
         probabilities = {}
         for label in [0, 1]:
             if len(std_devs[label]) == 0:
-                print self.model
-                print 'Standard Deviations is empty!!!'
+                #print self.model
+                #print 'Standard Deviations is empty!!!'
                 probabilities[label] = [0] * len(data)
                 continue
             prob_of_y = y_prob if label==1 else (1-y_prob)

@@ -5,7 +5,7 @@ import numpy as np
 
 
 class AdaboostOptimal(object):
-    def __init__(self, max_rounds=10, learner=DecisionTreeClassifier, verbose=False):
+    def __init__(self, max_rounds=10, learner=DecisionTreeClassifier, verbose=False, do_fast=True, all_features=False):
         self.max_rounds = max_rounds
         self.learner = learner
         self.verbose = verbose
@@ -19,9 +19,11 @@ class AdaboostOptimal(object):
         self.adaboost_error_test = {}
         self.local_errors = {}
 
-        self.margin = 0
-        self.feature_margin = 0
-        self.abs_sum_alpha = 0
+        # extra for other homeworks
+        self.quick = do_fast
+        self.margins = []
+        self.sum_alpha = 0
+        self.all_features = all_features
 
     def print_stats(self):
         pass
@@ -55,11 +57,9 @@ class AdaboostOptimal(object):
 
         w = np.ones(X.shape[0]) / X.shape[0]
         for round_number in xrange(self.max_rounds):
-            #print w
+
             current_hypothesis = self.learner().fit(X, y, sample_weight=w)
             y_pred = current_hypothesis.predict(X)
-            #if round_number % 10 == 0:
-            #    print round_number
 
             y = np.array(y)
             self.local_errors[round_number + 1] = float(np.sum([y==y_pred]))/y.shape[0]
@@ -71,21 +71,18 @@ class AdaboostOptimal(object):
             w[y == y_pred] *= error / (1.0 - error)
             w /= np.sum(w)
 
-            #self.stump.append(hw4.DecisionStump(current_hypothesis.tree_.feature[0], current_hypothesis.tree_.threshold[0]))
             self.hypotheses.append(current_hypothesis)
             self.alpha.append(np.log((1 - error) / error) if error > 0 else 1.0)
             #self.snapshots.append(self.clone())
 
-            #train_y = self.predict(X)
-            #y = self._check_y(y)
-            #train_y = self._check_y(train_y)
-            #self.adaboost_error[round_number + 1] = float(np.sum([y == train_y]))/y.shape[0]
+            if not self.quick:
+                train_y = self.predict(X)
+                self.stump.append(hw4.DecisionStump(current_hypothesis.tree_.feature[0], current_hypothesis.tree_.threshold[0]))
+                self.margins.append(sum(train_y * w * y))
+            #    m = sum(w * self._check_y_not_zero(train_y))
 
-            #m = sum([wi * py for wi, py in zip(w, self._check_y_not_zero(train_y))])
-
-            #self.abs_sum_alpha += np.abs(sum(w))
-            #self.feature_margin = float(m)/self.abs_sum_alpha
-            #self.margin += m
+            #    self.sum_alpha += sum(w)
+            #    self.margins.append(m)
 
             if self.verbose:
                 print("round {}: error={:.2f}. alpha={:.2f}. AUC={:.3f}".format(
