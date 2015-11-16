@@ -26,41 +26,43 @@ Homework 5
 
 def q1():
     """ feature analysis with Adaboost """
-    spamData = hw3u.pandas_to_data(hw3u.load_and_normalize_spambase())
+    #spamData = hw3u.pandas_to_data(hw3u.load_and_normalize_spambase())
+    spamData = utils.load_and_normalize_polluted_spam_data()
     k = 10
     all_folds = hw3u.partition_folds(spamData, k)
     col_errs = []
-    for i in [0]:  #range(k):
-        kf_train, kf_test = dl.get_train_and_test(all_folds, i)
-        y, X = hw4u.split_truth_from_data(kf_train)
-        y_test, X_test = hw4u.split_truth_from_data(kf_test)
-        #for coln in [0]: #range(len(X_full[0])):
-        #X = hw5u.remove_col(X_full, coln)
-        #X_test = hw5u.remove_col(X_test_full, coln)
-        adaboost = adac.AdaboostOptimal(max_rounds=100, do_fast=False, learner=lambda: DecisionTreeClassifier(max_depth=1, splitter='random'))
-        #adaboost = adac.AdaboostOptimal(max_rounds=10, do_fast=False, learner=hw4u.TreeOptimal)
-        adaboost.fit(X, y)
-        yt_pred = adaboost.predict(X_test)
-        yt_pred = adaboost._check_y(yt_pred)
-        y_test = adaboost._check_y(y_test)
-        round_err = float(np.sum([1 if yt!=yp else 0 for yt, yp in zip(yt_pred, y_test)]))/len(y_test)
+    kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
+    y, X = hw4u.split_truth_from_data(kf_train)
+    y_test, X_test = hw4u.split_truth_from_data(kf_test)
 
-        print 'Error at {}%: Margin sum: {}'.format(round_err, '') #sum(feature_margins[-1]))
-        col_errs.append(round_err)
+    # We're not actually cross-validating anything -- we just want feature weights
+    X = np.concatenate([X, X_test], axis=0)
+    y = np.concatenate([y, y_test], axis=0)
+
+    #adaboost = adac.AdaboostOptimal(max_rounds=100, do_fast=False, learner=lambda: DecisionTreeClassifier(max_depth=1, splitter='random'))
+    adaboost = adac.AdaboostOptimal(max_rounds=100, do_fast=False, learner=lambda: DecisionTreeClassifier(max_depth=1, splitter='best'))
+    #adaboost = adac.AdaboostOptimal(max_rounds=10, do_fast=False, learner=hw4u.TreeOptimal)
+    adaboost.fit(X, y)
 
 
     margin_fractions = get_margin_fractions(adaboost, X[0])
-    print col_errs
+    #margin_fractions_v = hw5u.get_margin_fractions_validate(adaboost, X, y)
+    #print col_errs
     ranked = rank(margin_fractions)
     print_ranks(ranked)
 
+    #ranked_v = rank(margin_fractions_v)
+    #print_ranks(ranked_v)
+
 
 def get_margin_fractions(ada, c):
-    totals = sum(ada.margins) * len(ada.stump)
+    totals = sum(ada.margins) #* len(ada.stump)
+    print 'total mine: {}'.format(totals)
     margin_fraction = []
     fmap = {}
     for i, s in enumerate(ada.stump):
-        fmap[s.feature] = []
+        if s.feature not in fmap.keys():
+            fmap[s.feature] = []
         fmap[s.feature].append(i)
     for f in range(len(c)):
         if f in fmap.keys():

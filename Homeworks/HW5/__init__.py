@@ -147,6 +147,61 @@ def random_color():
     b = np.random.random()
     return (r,g,b)
 
+def get_margin_fractions_validate(ada, X, y):
+    def normalize_labels(y):
+        """Normalizes positive labels to +1 and negative labels to -1"""
+        return np.asarray([1.0 if yi > 0 else -1.0 for yi in y])
+
+    def single_sample_margin(ada, H, X, y, i, round_idx):
+        """\
+        Computes margin for a single sample using a given subset of AdaBoost rounds.
+
+        :param ada: fitted AdaBoost instance
+        :param H: matrix of predictions where rows are stumps from each AdaBoost round, and columns are
+        the stumps' prediction for a sample
+        :param X: data matrix
+        :param y: ground truth
+        :param i: index of sample for which to compute margin
+        :param round_idx: which AdaBoost rounds to include in the sum
+        :return: margin due to the sample, a float
+
+        """
+        if len(round_idx) == 0:
+            return 0.0
+
+        return np.sum([y[i] * ada.alpha[j] * H[j][i] for j in round_idx])
+
+    def feature_margin(ada, H, X, y, feat_idx):
+        """\
+        Computes margin over all samples for a single feature.
+
+        :param ada: fitted AdaBoost instance
+        :param H: matrix of predictions where rows are stumps from each AdaBoost round, and columns are
+        the stumps' prediction for a sample
+        :param X: data matrix
+        :param y: ground truth
+        :param feat_idx: index of the feature for which to compute margin
+        :return: margin for the feature, a float
+
+        """
+        all_rounds = np.arange(len(ada.stump))
+        rounds_with_feat = np.asarray([round_idx
+                                       for round_idx, stump in zip(all_rounds, ada.stump)
+                                       if stump.feature == feat_idx])
+
+        margin_f = np.sum([single_sample_margin(ada, H, X, y, sample_idx, rounds_with_feat)
+                           for sample_idx in range(X.shape[0])])
+        margin_total = np.sum([single_sample_margin(ada, H, X, y, sample_idx, all_rounds)
+                               for sample_idx in range(X.shape[0])])
+        return margin_f / margin_total
+
+    X = np.asarray(X)
+    y = normalize_labels(y)
+    H = np.asarray([normalize_labels(h.predict(X)) for h in ada.hypotheses])
+    return np.asarray([feature_margin(ada, H, X, y, feat_idx) for feat_idx in xrange(X.shape[1])])
+
+
+
 
 
 

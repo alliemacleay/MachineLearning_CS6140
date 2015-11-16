@@ -46,8 +46,8 @@ class Model_w():
 def dec_or_reg_tree(df_train, df_test, Y):
     binary = utils.check_binary(df_train[Y])
     if binary:
-        newtree = treeHW4.TreeOptimal()
-        y = utils.pandas_to_data(df_train[Y])
+        newtree = treeHW4.TreeOptimal(max_depth=1)
+        y = list(df_train[Y])
         nondf_train = utils.pandas_to_data(df_train)
         nondf_test = utils.pandas_to_data(df_test)
         newtree.fit(nondf_train, y)
@@ -208,10 +208,10 @@ def q_1():
     h_test, h_train = utils.load_and_normalize_housing_set()
     h_results = []
     s_results = []
-    h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # MSE - 568 test- 448
-    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # MSE - 27 test -14
-    h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # 24176 - 68289
-    h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works but MSE too low? .0022 - .0013
+    #h_results.append(dec_or_reg_tree(h_train, h_test, 'MEDV')) # MSE - 568 test- 448
+    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV')) # MSE - 27 test -14
+    #h_results.append(linear_reg_errors(h_train, h_test, 'MEDV', True)) # 24176 - 68289
+    #h_results.append(linear_gd(h_train, h_test, 'MEDV')) # works but MSE too low? .0022 - .0013
     #h_results.append(logistic_gd(h_train, h_test, 'MEDV'))  # 1.46e_13 - 1.17e+13
 
     s_test, s_train = utils.split_test_and_train(utils.load_and_normalize_spam_data())

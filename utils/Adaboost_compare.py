@@ -43,9 +43,11 @@ class AdaboostOptimal(object):
             raise ValueError("Bad labels. Expected either 0/1 or -1/1, but got: {}".format(sorted(set(y))))
 
     def _check_y_not_zero(self, y):
-        if {1, 0}.issubset(set(y)):
+        if {1, 0}.issubset(set(y)) or set([0]) == set(y):
             return [1 if yi == 1 else -1 for yi in y]
         elif {-1, 1}.issubset(set(y)):
+            return y
+        elif [1] == set(y):
             return y
         else:
             raise ValueError("Bad labels. Expected either 0/1 or -1/1, but got: {}".format(sorted(set(y))))
@@ -65,8 +67,6 @@ class AdaboostOptimal(object):
             self.local_errors[round_number + 1] = float(np.sum([y==y_pred]))/y.shape[0]
 
             error = np.sum(w[y!=y_pred])
-            #error = np.sum(w * (y!=y_pred))
-
 
             w[y == y_pred] *= error / (1.0 - error)
             w /= np.sum(w)
@@ -75,14 +75,11 @@ class AdaboostOptimal(object):
             self.alpha.append(np.log((1 - error) / error) if error > 0 else 1.0)
             #self.snapshots.append(self.clone())
 
-            if not self.quick:
-                train_y = self.predict(X)
-                self.stump.append(hw4.DecisionStump(current_hypothesis.tree_.feature[0], current_hypothesis.tree_.threshold[0]))
-                self.margins.append(sum(train_y * w * y))
-            #    m = sum(w * self._check_y_not_zero(train_y))
+            alpha_arr = np.asarray([self.alpha[-1]] * len(y_pred))
 
-            #    self.sum_alpha += sum(w)
-            #    self.margins.append(m)
+            if not self.quick:
+                self.stump.append(hw4.DecisionStump(current_hypothesis.tree_.feature[0], current_hypothesis.tree_.threshold[0]))
+                self.margins.append(sum(alpha_arr * self._check_y_not_zero(y_pred) * self._check_y_not_zero(y)))
 
             if self.verbose:
                 print("round {}: error={:.2f}. alpha={:.2f}. AUC={:.3f}".format(
