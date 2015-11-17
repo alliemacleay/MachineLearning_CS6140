@@ -16,6 +16,8 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, accuracy_score
 from sklearn.feature_selection import SelectKBest
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import BernoulliNB
+
 from sklearn.linear_model import LogisticRegression
 import sklearn.linear_model as lm
 import pandas as pd
@@ -36,8 +38,8 @@ def q1():
     y_test, X_test = hw4u.split_truth_from_data(kf_test)
 
     # We're not actually cross-validating anything -- we just want feature weights
-    X = np.concatenate([X, X_test], axis=0)
-    y = np.concatenate([y, y_test], axis=0)
+    #X = np.concatenate([X, X_test], axis=0)
+    #y = np.concatenate([y, y_test], axis=0)
 
     #adaboost = adac.AdaboostOptimal(max_rounds=100, do_fast=False, learner=lambda: DecisionTreeClassifier(max_depth=1, splitter='random'))
     adaboost = adac.AdaboostOptimal(max_rounds=100, do_fast=False, learner=lambda: DecisionTreeClassifier(max_depth=1, splitter='best'))
@@ -51,8 +53,15 @@ def q1():
     ranked = rank(margin_fractions)
     print_ranks(ranked)
 
+    pred = adaboost.predict(X_test)
+    print 'Accuracy: {}'.format(accuracy_score(adaboost._check_y_not_zero(y_test), adaboost._check_y_not_zero(pred)))
+
+
+
     #ranked_v = rank(margin_fractions_v)
     #print_ranks(ranked_v)
+
+
 
 
 def get_margin_fractions(ada, c):
@@ -98,6 +107,7 @@ def q2():  # Done
     GaussianNB(data, num_features=100)
 
 
+
 def GaussianNB(X, num_features=None):
     model_type = 1
     train_acc_sum = 0
@@ -114,12 +124,14 @@ def GaussianNB(X, num_features=None):
         grouped_fold = hw5u.group_fold(k_folds, ki)
         alpha = .001 if model_type==0 else 0
         mask_cols = check_cols(grouped_fold)
-        nb_model = nb.NaiveBayes(model_type, alpha=alpha, ignore_cols=mask_cols)
+        #nb_model = nb.NaiveBayes(model_type, alpha=alpha, ignore_cols=mask_cols)
+        nb_model = BernoulliNB()
         print 'len of kfolds {}'.format(len(grouped_fold))
         #truth_rows, data_rows, data_mus, y_mu = hw3u.get_data_and_mus(grouped_fold)
         truth_rows, data_rows = utils.split_truth_from_data(grouped_fold)
         print 'len of data {}'.format(len(data_rows))
-        nb_model.train(data_rows, truth_rows)
+        #nb_model.train(data_rows, truth_rows)
+        nb_model.fit(data_rows, truth_rows)
         predict = nb_model.predict(data_rows)
         #print predict
         accuracy = hw3u.get_accuracy(predict, truth_rows)
@@ -216,7 +228,7 @@ Process finished with exit code 0
     print 'finished processing'
 
     rects = hw5u.get_rect_coords(100)
-    hw5u.show_rectangles(rects)
+    #hw5u.show_rectangles(rects)
 
     for i in range(len(black)):
         row = []
@@ -225,6 +237,7 @@ Process finished with exit code 0
             row.append(h_diff)
             row.append(v_diff)
         X.append(row)
+    save(X)
     # Each image is a row in table X.
     # Features are
     # rectangle_1_horizontal_difference, rectangle_1_vertical_difference, rectangle_2_ho...
@@ -245,5 +258,11 @@ Process finished with exit code 0
                        ('test', X_test, y_test)]:
         print("Set: {}. Accuracy: {:.3f}".format(set_name, accuracy_score(y, cls.predict(X))))
 
+
+def save(data):
+    df = pd.DataFrame(data)
+    #with open('df_save_img_everything.csv', 'w') as fimg:
+    with open('df_save_X.csv', 'w') as fimg:
+        df.to_csv(fimg)
 
 

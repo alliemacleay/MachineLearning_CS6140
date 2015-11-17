@@ -72,10 +72,10 @@ def unit_tests():
 
 if __name__ == '__main__':
     #unit_tests()
-    hw5.q1()
+    #hw5.q1()
     #hw5.q2()  # full points
     #hw5.q3()  # points off
     #hw5.q4()
-    #hw5.q5()
+    hw5.q5()
 
 
