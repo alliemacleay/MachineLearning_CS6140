@@ -7,7 +7,7 @@ from scipy.optimize import fsolve
 
 __author__ = 'Allison MacLeay'
 
-MIN_SUPPORT_VECTOR_MULTIPLIER = 1
+MIN_SUPPORT_VECTOR_MULTIPLIER = 1e-5
 
 
 class SVC(object):
@@ -158,11 +158,12 @@ class SMO(object):
 
         alpha = np.zeros(y.shape[0], dtype=np.float) if self.alpha is None else self.alpha.copy()
 
-        #lagrange_multipliers = Lagrangian(X, y, self.kernel)
-        lagrange_multipliers = myLagrangian(X, y, self.kernel, 5, 1e-5, 100)
+        #real_lagrange_multipliers = Lagrangian(X, y, self.kernel)
+        lagrange_multipliers, bias = myLagrangian(X, y, self.kernel, 10, 1e-10, 100)
         support_vector_indices = \
             lagrange_multipliers > MIN_SUPPORT_VECTOR_MULTIPLIER
-
+        if True not in support_vector_indices:
+            print 'Warning: Empty lagrange multiplier vector.  Min is {} and max lagrangian is {}'.format(MIN_SUPPORT_VECTOR_MULTIPLIER, np.max(lagrange_multipliers))
         support_multipliers = lagrange_multipliers[support_vector_indices]
         support_vectors = X[support_vector_indices]
         support_vector_labels = y[support_vector_indices]
@@ -170,17 +171,17 @@ class SMO(object):
         # http://www.cs.cmu.edu/~guestrin/Class/10701-S07/Slides/kernels.pdf
         # bias = y_k - \sum z_i y_i  K(x_k, x_i)
         # Find error from SVC for each sample
-        bias = np.mean(
+        computed_bias = np.mean(
             [y_k - SVC(SMO, self.kernel, 0.0).predict(x_k,
                 weights=support_multipliers,
                 sv=support_vectors,
                 svl=support_vector_labels)
              for (y_k, x_k) in zip(support_vector_labels, support_vectors)])
 
+        print 'bias {} computed {}'.format(bias, computed_bias)
         return bias, support_multipliers, support_vectors, support_vector_labels,
 
 def eval_f(x, X, y, kernel, alphas, bias):
-    res = np.zeros(X.shape[0])
     sigma = bias
     for i in range(X.shape[0]):
         sigma += np.sum(alphas[i] * y[i] * kernel.f(x, X[i]))
@@ -254,8 +255,9 @@ def myLagrangian(X, y, kernel, c=1., tolerance=1e-5, maxiter=100):
                 passes +=1.
             else:
                 passes = 0
-            print 'pass  b   yE   numChanged'
+            print '%5s %5s %5s %5s' % ('pass', 'b','yE', 'numChanged')
             print '%i    %f  %f  %f' % (passes, b, yE, n_changed)
+        return alphas, b
 
 
 

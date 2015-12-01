@@ -1,3 +1,4 @@
+from sklearn.metrics.scorer import accuracy_scorer
 import CS6140_A_MacLeay.Homeworks.hw6 as hw6
 import CS6140_A_MacLeay.Homeworks.HW6 as hw6u
 import CS6140_A_MacLeay.utils as utils
@@ -8,6 +9,7 @@ import os
 import pickle
 import cvxopt
 import CS6140_A_MacLeay.Homeworks.HW6.mycvxopt as mycvxopt
+from sklearn import svm
 
 __author__ = 'Allison MacLeay'
 
@@ -66,15 +68,18 @@ def test_cvxopt():
 
 def test_mysvm():
     X, y = testData()
+    X = np.concatenate([X, y.reshape((len(y), 1))], axis=1)
+    X = [list(x.ravel()) for x in X]
+    hw6.svm_q1(X, mysvm.SVC(mysvm.SMO, mysvm.Kernel('linear')))
+    hw6.svm_q1(X, svm.SVC())
+
 
 def testData(y_ones=False):
     # Create the dataset
     rng = np.random.RandomState(1)
-    X = np.linspace(0, 6, 100)[:, np.newaxis]
-    y = np.sin(X).ravel() + np.sin(6 * X).ravel() + rng.normal(0, 0.1, X.shape[0])
-    if y_ones:
-        c = np.mean(y_ones)
-        y = [-1 if yi < c else 1 for yi in y]
+    X = rng.rand(100, 2)
+    y = np.asarray([0] * 50 + [1] * 50)
+    X[y == 1] += 0.5
     return X, y
 
 
@@ -82,6 +87,7 @@ if __name__ == '__main__':
     #do_tests()
     #test_SMO()
     #test_cvxopt()
+    #test_mysvm()
     #hw6.q1a()
     #hw6.q1b()
     hw6.q2()

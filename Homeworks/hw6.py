@@ -52,7 +52,7 @@ def multiclassSVC(classifier, sz=2000):
     #clf = OutputCodeClassifier(LinearSVC(random_state=0), code_size=10, random_state=0).fit(np.asarray(X), y)
     y_pred = clf.predict(X)
     print 'train acc: {} test acc: {}'.format(accuracy_score(fix_y(y_pred), fix_y(y)), accuracy_score(fix_y(y_test), fix_y(clf.predict(X_test))))
-    print 'train acc: {} test acc: {}'.format(accuracy_scorer(clf, X, y), accuracy_score(y_test, clf.predict(X_test)))
+    print 'train acc: {} test acc: {}'.format(accuracy_score(fix_y(clf.predict(X)), fix_y(y)), accuracy_score(fix_y(y_test), fix_y(clf.predict(X_test))))
 
 
 
@@ -66,7 +66,7 @@ def svm_q1(data, classifier=svm.SVC()):
     clf = classifier
     clf.fit(X, y)
     y_pred = clf.predict(X_test)
-    print 'train acc: {} test acc: {}'.format(accuracy_score(fix_y(y), clf.predict(X)), accuracy_score(fix_y(y_test), clf.predict(X_test)))
+    print 'train acc: {} test acc: {}'.format(accuracy_score(fix_y(y), fix_y(clf.predict(X))), accuracy_score(fix_y(y_test), fix_y(clf.predict(X_test))))
 
 
 
@@ -88,6 +88,8 @@ def q5():
 
 def fix_y(y_old):
     """ replace -1 with 0 """
+    if y_old is np.float64 or y_old is np.isnan(y_old):
+        pass
     if -1 in set(y_old):
         y = [0 if y_i==-1 else 1 for y_i in y_old]
     else:
