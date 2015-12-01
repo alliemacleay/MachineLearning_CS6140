@@ -396,13 +396,14 @@ class DecisionStump(object):
 
 
 
-def split_truth_from_data(data):
+def split_truth_from_data(data, replace_zeros=True):
     """ Assumes that the truth column is the last column """
     truth_rows = utils.transpose_array(data)[-1]  # truth is by row
     data_rows = utils.transpose_array(utils.transpose_array(data)[:-1])  # data is by column
-    for i in range(len(truth_rows)):
-        if truth_rows[i] == 0:
-            truth_rows[i] = -1
+    if replace_zeros:
+        for i in range(len(truth_rows)):
+            if truth_rows[i] == 0:
+                truth_rows[i] = -1
     return truth_rows, data_rows
 
 def partition_folds(data, percentage):

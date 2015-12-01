@@ -216,7 +216,7 @@ Process finished with exit code 0
     http://colah.github.io/posts/2014-10-Visualizing-MNIST/
     """
     path = os.path.join(os.getcwd(), 'data/HW5/haar')
-    limit = 12000 #60,000
+    limit = 60000
     images, labels = load_mnist('training', path=path)
     images /= 128.0
     X = []
@@ -237,7 +237,7 @@ Process finished with exit code 0
             row.append(h_diff)
             row.append(v_diff)
         X.append(row)
-    save(X)
+    save(X, labels)
     # Each image is a row in table X.
     # Features are
     # rectangle_1_horizontal_difference, rectangle_1_vertical_difference, rectangle_2_ho...
@@ -259,10 +259,11 @@ Process finished with exit code 0
         print("Set: {}. Accuracy: {:.3f}".format(set_name, accuracy_score(y, cls.predict(X))))
 
 
-def save(data):
+def save(data, labels):
     df = pd.DataFrame(data)
-    #with open('df_save_img_everything.csv', 'w') as fimg:
-    with open('df_save_X.csv', 'w') as fimg:
+    df['label'] = labels
+    #with open('df_mnist_labels.csv', 'w') as fimg:
+    with open('df_save_img_everything.csv', 'w') as fimg:
         df.to_csv(fimg)
 
 
