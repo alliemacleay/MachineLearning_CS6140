@@ -1,3 +1,5 @@
+from timeit import timeit
+
 from sklearn.metrics.scorer import accuracy_scorer
 import CS6140_A_MacLeay.Homeworks.hw6 as hw6
 import CS6140_A_MacLeay.Homeworks.HW6 as hw6u
@@ -79,7 +81,7 @@ def testData(y_ones=False):
     rng = np.random.RandomState(1)
     X = rng.rand(100, 2)
     y = np.asarray([0] * 50 + [1] * 50)
-    X[y == 1] += 0.5
+    X[y == 1] += 2.0
     return X, y
 
 
@@ -87,9 +89,9 @@ if __name__ == '__main__':
     #do_tests()
     #test_SMO()
     #test_cvxopt()
-    #test_mysvm()
+    timeit(test_mysvm, number=1)
     #hw6.q1a()
     #hw6.q1b()
-    hw6.q2()
+    #hw6.q2()
     #hw6.q3()
 

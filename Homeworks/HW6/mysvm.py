@@ -5,6 +5,15 @@ import inspect
 import warnings
 from scipy.optimize import fsolve
 
+import subprocess
+subprocess.call(["cython","-a","Homeworks/HW6/superfast.pyx"])
+
+import pyximport
+pyximport.install(setup_args={"include_dirs": np.get_include()},
+                  reload_support=True)
+
+import superfast
+
 __author__ = 'Allison MacLeay'
 
 MIN_SUPPORT_VECTOR_MULTIPLIER = 1e-5
@@ -159,7 +168,7 @@ class SMO(object):
         alpha = np.zeros(y.shape[0], dtype=np.float) if self.alpha is None else self.alpha.copy()
 
         #real_lagrange_multipliers = Lagrangian(X, y, self.kernel)
-        lagrange_multipliers, bias = myLagrangian(X, y, self.kernel, 10, 1e-10, 100)
+        lagrange_multipliers, bias = superfast.myLagrangian(X, y, self.kernel, 10, 1e-10, 100)
         support_vector_indices = \
             lagrange_multipliers > MIN_SUPPORT_VECTOR_MULTIPLIER
         if True not in support_vector_indices:

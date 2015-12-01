@@ -98,3 +98,5 @@ def fix_y(y_old):
 
 
 
+if __name__ == "__main__":
+    q2()
