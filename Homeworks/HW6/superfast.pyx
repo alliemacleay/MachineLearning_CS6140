@@ -26,18 +26,24 @@ def inner_2d(np.ndarray[np.float_t, ndim=2] X, int i, int j):
 
 
 class Kernel(object):
-    def __init__(self, ktype='linear'):
+    def __init__(self, ktype='linear', degree=3, coef0=0.):
         self.ktype = ktype
+        self.degree = degree
+        self.coef0 = coef0
 
     def f_fast(self, X, i, j):
         if self.ktype == 'linear':
             return inner_2d(X, i, j)
+        elif self.ktype == 'poly':
+            return self.f(X[i], X[j])
         else:
             return 'ERR: not implemented'
 
     def f(self, x, y):
         if self.ktype == 'linear':
             return np.inner(x, y)
+        elif self.ktype == 'poly':
+            return (self.coef0 + np.inner(x, y)) ** self.degree
         else:
             return 'ERR: not implemented'
 

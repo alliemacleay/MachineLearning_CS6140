@@ -4,9 +4,10 @@ import cvxopt
 import inspect
 import warnings
 from scipy.optimize import fsolve
+import os
 
 import subprocess
-subprocess.call(["cython","-a","Homeworks/HW6/superfast.pyx"])
+subprocess.call(["cython", "-a", os.path.join(os.getcwd(), "superfast.pyx")])
 
 import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()},
@@ -167,7 +168,10 @@ class SMO(object):
 
         alpha = np.zeros(y.shape[0], dtype=np.float) if self.alpha is None else self.alpha.copy()
 
+        # Quadratic solver
         lagrange_multipliers, bias = Lagrangian(X, y, self.kernel)
+
+        # SMO
         #lagrange_multipliers, bias = superfast.myLagrangian(X, y, self.kernel, 1.0, 1e-2, 1)
         support_vector_indices = \
             lagrange_multipliers > MIN_SUPPORT_VECTOR_MULTIPLIER

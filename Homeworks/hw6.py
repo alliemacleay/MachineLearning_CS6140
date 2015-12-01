@@ -75,6 +75,10 @@ def q2():
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
     svm_q1(data, mysvm.SVC(mysvm.SMO, Kernel('linear')))
 
+def q2_kernel_poly():
+    data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
+    svm_q1(data, mysvm.SVC(mysvm.SMO, Kernel('poly')))
+
 
 def q3():
     multiclassSVC(mysvm.SVC(mysvm.SMO, Kernel('linear')))

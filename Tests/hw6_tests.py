@@ -92,6 +92,7 @@ if __name__ == '__main__':
     #timeit(test_mysvm, number=1)
     #hw6.q1a()
     #hw6.q1b()
-    hw6.q2()
+    #hw6.q2()
+    hw6.q2_kernel_poly()
     #hw6.q3()
 
