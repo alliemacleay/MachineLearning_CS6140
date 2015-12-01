@@ -167,8 +167,8 @@ class SMO(object):
 
         alpha = np.zeros(y.shape[0], dtype=np.float) if self.alpha is None else self.alpha.copy()
 
-        #real_lagrange_multipliers = Lagrangian(X, y, self.kernel)
-        lagrange_multipliers, bias = superfast.myLagrangian(X, y, self.kernel, 1.0, 1e-2, 1)
+        lagrange_multipliers, bias = Lagrangian(X, y, self.kernel)
+        #lagrange_multipliers, bias = superfast.myLagrangian(X, y, self.kernel, 1.0, 1e-2, 1)
         support_vector_indices = \
             lagrange_multipliers > MIN_SUPPORT_VECTOR_MULTIPLIER
         if True not in support_vector_indices:
@@ -180,14 +180,16 @@ class SMO(object):
         # http://www.cs.cmu.edu/~guestrin/Class/10701-S07/Slides/kernels.pdf
         # bias = y_k - \sum z_i y_i  K(x_k, x_i)
         # Find error from SVC for each sample
-        computed_bias = np.mean(
-            [y_k - SVC(SMO, self.kernel, 0.0).predict(x_k,
-                weights=support_multipliers,
-                sv=support_vectors,
-                svl=support_vector_labels)
-             for (y_k, x_k) in zip(support_vector_labels, support_vectors)])
+        if bias is None:  # bias is None for Lagrangian()
+            # use support vectors to compute difference from truth set
+            bias = np.mean(
+                [y_k - SVC(SMO, self.kernel, 0.0).predict(x_k,
+                    weights=support_multipliers,
+                    sv=support_vectors,
+                    svl=support_vector_labels)
+                 for (y_k, x_k) in zip(support_vector_labels, support_vectors)])
 
-        print 'bias {} computed {}'.format(bias, computed_bias)
+        print 'bias {}'.format(bias)
         return bias, support_multipliers, support_vectors, support_vector_labels,
 
 def eval_f(x, X, y, kernel, alphas, bias):
@@ -315,7 +317,7 @@ def Lagrangian(X, y, kernel, c=10):
 
         # Lagrange multipliers
         # http://cvxopt.org/userguide/coneprog.html?highlight=solvers.qp#cvxopt.solvers.qp
-        return np.ravel(solution['x'])
+        return np.ravel(solution['x']), None
 
 
 
