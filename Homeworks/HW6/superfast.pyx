@@ -25,44 +25,40 @@ cdef inline float inner(np.ndarray[np.float_t, ndim=1] a, np.ndarray[np.float_t,
     return result
 
 
+@cython.boundscheck(False) # turn of bounds-checking for entire function
+cdef inline float inner_2d(np.ndarray[np.float_t, ndim=2] X, int i, int j):
+    cdef int k
+    cdef float result
+    result = 0
+    for k in range(X.shape[1]):
+            result += X[i, k] * X[j, k]
+    return result
+
+
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function
 cdef inline float bias(float b, float Ei, float yi, float yj, float aidiff, float ajdiff,
-                       np.ndarray[np.float_t, ndim=1] Xi, np.ndarray[np.float_t, ndim=1] Xj, object kernel):
+                       int i, int j, object kernel,
+                       np.ndarray[np.float_t, ndim=2] K):
     # TODO: other kernels
-    return b - Ei - yi * aidiff * inner(Xi, Xi) - yj * ajdiff * inner(Xi, Xj)
+    return b - Ei - yi * aidiff * K[i, i] - yj * ajdiff * K[i, j]
 
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function
-cdef inline float eval_f(np.ndarray[np.float_t, ndim=1] x, np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1] y, object kernel, np.ndarray alphas, float bias):
+cdef inline float eval_f(int idx, np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1] y, object kernel, 
+                         np.ndarray [np.float_t, ndim=1] alphas, float bias,
+                         np.ndarray[np.float_t, ndim=2] K):
     cdef float sigma
     cdef int i
     sigma = bias
     for i in range(X.shape[0]):
         # TODO: other kernels
-        sigma += alphas[i] * y[i] * inner(x, X[i])
+        sigma += alphas[i] * y[i] * K[idx, i]
     return sigma
 
 
 cdef inline float float_max(float a, float b): return a if a >= b else b
 cdef inline float float_min(float a, float b): return a if a <= b else b
-
-
-cdef float** convert_matrix(np.ndarray[np.float_t, ndim=2] Xin):
-    cdef int i
-    cdef float **X
-    cdef float *x
-    X = <float **>malloc(Xin.shape[0] * cython.sizeof(float))
-    if X is NULL:
-            raise MemoryError()
-
-    for i in range(Xin.shape[0]):
-            x = <float *>malloc(Xin.shape[1] * cython.sizeof(float))
-            for j in range(Xin.shape[1]):
-                    x[j] = Xin[i, j]
-            X[i] = x
-                    
-    return X
 
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function
@@ -77,7 +73,7 @@ def myLagrangian(np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1
         cdef float b, b1, b2, rho, aidiff, ajdiff
         cdef float n_changed
         cdef float fX
-        cdef float Ei
+        cdef float Ei, Ej
         cdef float yE
         cdef np.ndarray[np.float_t, ndim=1] alphas
         cdef float passes
@@ -89,7 +85,7 @@ def myLagrangian(np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1
         print('Computing kernel values...')
         for i in range(X.shape[0]):
                 for j in range(X.shape[0]):
-                        K[i, j] = inner(X[i], X[j])
+                        K[i, j] = inner_2d(X, i, j)
         print('Done!')
 
         b = 0.
@@ -100,7 +96,7 @@ def myLagrangian(np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1
         while passes < maxiter:
             n_changed = 0
             for i in range(X.shape[0]):
-                fX = eval_f(X[i], X, y, kernel, alphas, b)
+                fX = eval_f(i, X, y, kernel, alphas, b, K)
                 Ei = fX - y[i]
                 yE = y[i] * Ei
                 if (yE < -tolerance and alphas[i] < c) or (yE > tolerance and alphas[i] > 0):
@@ -108,7 +104,7 @@ def myLagrangian(np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1
                     # ensure that j != i
                     if j >= i:
                         j += 1
-                    Ej = eval_f(X[j], X, y, kernel, alphas, b) - y[j]
+                    Ej = eval_f(j, X, y, kernel, alphas, b, K) - y[j]
                     alpha_i_old = alphas[i]
                     alpha_j_old = alphas[j]
                     if y[i] != y[j]:
@@ -136,8 +132,8 @@ def myLagrangian(np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1
                                 alphas[i] = alpha_i_old + y[i] * y[j] * (alpha_j_old - alphas[j])
                             ajdiff = alphas[j] - alpha_j_old
                             aidiff = alphas[i] - alpha_i_old
-                            b1 = bias(b, Ei, y[i], y[j], aidiff, ajdiff, X[i], X[j], kernel)
-                            b2 = bias(b, Ej, y[j], y[i], ajdiff, aidiff, X[j], X[i], kernel)
+                            b1 = bias(b, Ei, y[i], y[j], aidiff, ajdiff, i, j, kernel, K)
+                            b2 = bias(b, Ej, y[j], y[i], ajdiff, aidiff, j, i, kernel, K)
                             if alphas[i] < c and alphas[i] > 0:
                                 b = b1
                             elif alphas[j] < c and alphas[j] > 0:

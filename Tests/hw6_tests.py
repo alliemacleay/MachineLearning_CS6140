@@ -89,9 +89,9 @@ if __name__ == '__main__':
     #do_tests()
     #test_SMO()
     #test_cvxopt()
-    timeit(test_mysvm, number=1)
+    #timeit(test_mysvm, number=1)
     #hw6.q1a()
     #hw6.q1b()
-    #hw6.q2()
+    hw6.q2()
     #hw6.q3()
 

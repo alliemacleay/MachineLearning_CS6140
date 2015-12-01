@@ -168,7 +168,7 @@ class SMO(object):
         alpha = np.zeros(y.shape[0], dtype=np.float) if self.alpha is None else self.alpha.copy()
 
         #real_lagrange_multipliers = Lagrangian(X, y, self.kernel)
-        lagrange_multipliers, bias = superfast.myLagrangian(X, y, self.kernel, 10, 1e-10, 100)
+        lagrange_multipliers, bias = superfast.myLagrangian(X, y, self.kernel, 1.0, 1e-2, 1)
         support_vector_indices = \
             lagrange_multipliers > MIN_SUPPORT_VECTOR_MULTIPLIER
         if True not in support_vector_indices:
