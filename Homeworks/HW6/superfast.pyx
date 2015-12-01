@@ -16,17 +16,7 @@ cimport cython
 
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function
-cdef inline float inner(np.ndarray[np.float_t, ndim=1] a, np.ndarray[np.float_t, ndim=1] b):
-    cdef int i
-    cdef float result
-    result = 0
-    for i in range(a.shape[0]):
-            result += a[i] * b[i]
-    return result
-
-
-@cython.boundscheck(False) # turn of bounds-checking for entire function
-cdef inline float inner_2d(np.ndarray[np.float_t, ndim=2] X, int i, int j):
+def inner_2d(np.ndarray[np.float_t, ndim=2] X, int i, int j):
     cdef int k
     cdef float result
     result = 0
@@ -34,6 +24,22 @@ cdef inline float inner_2d(np.ndarray[np.float_t, ndim=2] X, int i, int j):
             result += X[i, k] * X[j, k]
     return result
 
+
+class Kernel(object):
+    def __init__(self, ktype='linear'):
+        self.ktype = ktype
+
+    def f_fast(self, X, i, j):
+        if self.ktype == 'linear':
+            return inner_2d(X, i, j)
+        else:
+            return 'ERR: not implemented'
+
+    def f(self, x, y):
+        if self.ktype == 'linear':
+            return np.inner(x, y)
+        else:
+            return 'ERR: not implemented'
 
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function
@@ -85,7 +91,8 @@ def myLagrangian(np.ndarray[np.float_t, ndim=2] X, np.ndarray[np.float_t, ndim=1
         print('Computing kernel values...')
         for i in range(X.shape[0]):
                 for j in range(X.shape[0]):
-                        K[i, j] = inner_2d(X, i, j)
+                        #K[i, j] = inner_2d(X, i, j)
+                        K[i, j] = kernel.f_fast(X, i, j)
         print('Done!')
 
         b = 0.

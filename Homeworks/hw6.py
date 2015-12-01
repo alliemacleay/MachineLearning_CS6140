@@ -4,6 +4,7 @@ import CS6140_A_MacLeay.Homeworks.HW6.mysvm as mysvm
 import CS6140_A_MacLeay.Homeworks.HW3 as hw3u
 import CS6140_A_MacLeay.Homeworks.HW4 as hw4u
 import CS6140_A_MacLeay.Homeworks.HW4.data_load as dl
+from CS6140_A_MacLeay.Homeworks.HW6.superfast import Kernel
 import CS6140_A_MacLeay.utils as utils
 from sklearn import svm
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier, OutputCodeClassifier
@@ -72,11 +73,11 @@ def svm_q1(data, classifier=svm.SVC()):
 
 def q2():
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
-    svm_q1(data, mysvm.SVC(mysvm.SMO, mysvm.Kernel('linear')))
+    svm_q1(data, mysvm.SVC(mysvm.SMO, Kernel('linear')))
 
 
 def q3():
-    multiclassSVC(mysvm.SVC(mysvm.SMO, mysvm.Kernel('linear')))
+    multiclassSVC(mysvm.SVC(mysvm.SMO, Kernel('linear')))
 
 
 def q4():

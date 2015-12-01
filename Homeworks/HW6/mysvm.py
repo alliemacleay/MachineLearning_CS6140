@@ -318,17 +318,5 @@ def Lagrangian(X, y, kernel, c=10):
         return np.ravel(solution['x'])
 
 
-class Kernel(object):
-    def __init__(self, ktype='linear'):
-        self.ktype = ktype
-
-    def f(self, x, y):
-        if self.ktype == 'linear':
-            return np.inner(x, y)
-        else:
-            return 'ERR: not implemented'
-
-
-
 
 
