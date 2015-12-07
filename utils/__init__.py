@@ -29,8 +29,8 @@ def load_and_normalize_housing_set(skip='MEDV'):
     return test, train
 
 def load_perceptron_data():
-    path = 'data'
-    perceptron_file = 'perceptronData.txt'
+    path = '../data/perceptron'
+    perceptron_file = 'perceptron.txt'
     os.system('pwd')
     data = read_perceptron_file(os.path.join(path, perceptron_file))
     return split_test_and_train(data)

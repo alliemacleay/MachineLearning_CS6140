@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""\
-(c) 2015 MGH Center for Integrated Diagnostics
-
-"""
-
 from __future__ import unicode_literals
 from __future__ import print_function
 import numpy as np

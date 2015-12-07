@@ -238,6 +238,18 @@ def random_sample(array, y_arr, size):
     y = [y_arr[i] for i in idx]
     return data, y
 
+def load_spirals():
+    file = '../data/twoSpirals.txt'
+    data = []
+    y = []
+    with open(file, 'rb') as spirals:
+        for line in spirals:
+            line = line.strip()
+            data.append(np.array(line.split('\t')[:-1], dtype=float))
+            y.append(line.split('\t')[-1])
+    return np.array(data), np.array(y, dtype=float)
+
+
 
 
 

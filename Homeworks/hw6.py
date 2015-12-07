@@ -24,7 +24,7 @@ def q1a():
     train acc: 0.806763285024 test acc: 0.819956616052
     """
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
-    svm_q1(data, svm.SVC())
+    svm_q1(data, svm.SVC(kernel='poly'))
 
 
 def q1b():
@@ -33,7 +33,7 @@ def q1b():
     Loading 9000 records from haar dataset
     Beginning analysis: (8100, 200)
     train acc: 0.91950617284 test acc: 0.81"""
-    multiclassSVC(LinearSVC(random_state=0), 2000)
+    multiclassSVC(LinearSVC(random_state=0), 5000)
 
 def multiclassSVC(classifier, sz=2000):
 
@@ -72,16 +72,22 @@ def svm_q1(data, classifier=svm.SVC()):
 
 
 def q2():
+    # c= 1, tol = 1-e2, passes = 1
+    # train acc: 0.904830917874 test acc: 0.917570498915
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
     svm_q1(data, mysvm.SVC(mysvm.SMO, Kernel('linear')))
 
 def q2_kernel_poly():
+    # c = 1, tol = 1-e2, passes = 1
+    #
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
     svm_q1(data, mysvm.SVC(mysvm.SMO, Kernel('poly')))
 
 
 def q3():
-    multiclassSVC(mysvm.SVC(mysvm.SMO, Kernel('linear')))
+    # c= 1, tol = 1-e2, passes = 1
+    #train acc: 0.871666666667 test acc: 0.875
+    multiclassSVC(mysvm.SVC(mysvm.SMO, Kernel('linear')), 6000)
 
 
 def q4():
