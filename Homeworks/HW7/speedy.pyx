@@ -78,6 +78,7 @@ def calc_K(object kernel, np.ndarray[np.float_t, ndim=2] X_test, np.ndarray[np.f
     return K
 
 
+@cython.boundscheck(False)
 def decision_function_radius(np.ndarray[np.float_t, ndim=2] K, np.ndarray[np.float_t, ndim=2] X_test, #np.ndarray[np.float_t, ndim=2] X_train,
                              np.ndarray[np.float_t, ndim=1] y_train, int n_neighbors, str kernel_name, #object kernel,
                              float radius, float outlier_label, int outlier_index,
@@ -85,19 +86,20 @@ def decision_function_radius(np.ndarray[np.float_t, ndim=2] K, np.ndarray[np.flo
     # Map to K
     print '[Cython] my predict {} {}'.format(n_neighbors, kernel_name)
 
-    cdef int i, j
+    cdef int i, j, ct_neighbors
     cdef int n_samples = X_test.shape[0]
     y_pred = np.zeros(n_samples)
     N = [[] for i in range(n_samples)]
     #radius
     none_arr = []
     for i in range(n_samples):
-        tmp = zip(K[i, :], range(len(K[i, :])))
-        for j in range(len(tmp)):
-            if tmp[j][0] < radius:
-                N[i].append(tmp[j])
-        if len(N[i]) == 0:
-            N[i] = np.array([np.array([outlier_label, outlier_index])])
+        ct_neighbors = 0
+        for j in range(K.shape[1]):
+            if K[i, j] < radius:
+                ct_neighbors += 1
+                N[i].append((K[i, j], j))
+        if ct_neighbors == 0:
+            N[i] = [[outlier_label, outlier_index]]
             none_arr.append(i)
         N[i] = np.asarray(N[i])
     N = np.asarray(N)

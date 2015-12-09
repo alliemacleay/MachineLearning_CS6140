@@ -88,11 +88,11 @@ def testCython():
 
 
 if __name__ == '__main__':
-    #tests_radius()
+    tests_radius()
     #tests_density()
     #testSpiralLoad()
     #testCython()
-    hw7.q1a()
+    #hw7.q1a()
     #hw7.q1b()
     #hw7.q2a()  # radius
     #hw7.q2b()
