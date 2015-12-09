@@ -37,7 +37,7 @@ class MyKNN(object):
     def __init__(self, n_neighbors=5, algorithm='brute', metric='minkowski', metric_params=None, p=2, cls_metric=np.mean, radius=None, density=False, outlier_label=None):
         self.n_neighbors = n_neighbors
         if metric == 'minkowski' and p == 2:
-            self.kernel = Kernel('euclidean')
+            self.kernel = speedy.Kernel('euclidean')
         else:
             self.kernel = Kernel()
         self.N = None
@@ -70,32 +70,16 @@ class MyKNN(object):
         print 'my predict {} {}'.format(self.n_neighbors, self.kernel.name())
         if type(X_test) is not np.ndarray:
             X_test = np.asarray(X_test)
-        n_samples, n_features = X_test.shape
-        n_samples_train = self.X_train.shape[0]
-        K = np.zeros((n_samples, n_samples_train))
-        for i, x_i in enumerate(X_test):  # x1
-            for j, x_j in enumerate(self.X_train):  # x2
-                K[i, j] = self.kernel.f(np.array(x_i), np.array(x_j))
+        K = speedy.calc_K(self.kernel, X_test, self.X_train)
 
+        print 'my Kernel calculated'
+        #print K
         y_pred = np.zeros(X_test.shape[0])
         self.N = [[] for i in range(X_test.shape[0])]
         if self.radius is not None:
             #radius
-            none_arr = []
-            for i in range(K.shape[0]):
-                tmp = zip(K[i, :], range(len(K[i, :])))
-                for j in range(len(tmp)):
-                    if tmp[j][0] < self.radius:
-                        self.N[i].append(tmp[j])
-                if len(self.N[i]) == 0:
-                    self.N[i] = np.array([np.array([self.outlier_label, self.outlier_index])])
-                    none_arr.append(i)
-                self.N[i] = np.asarray(self.N[i])
-            self.N = np.asarray(self.N)
-
-            if len(none_arr) > 0:
-                print '{} outliers'.format(len(none_arr))
-                print none_arr
+            return speedy.decision_function_radius(K, np.array(X_test), self.y_train, self.n_neighbors, self.kernel.name(),
+                      float(self.radius), float(self.outlier_label), int(self.outlier_index), self.cls_metric)
 
         elif self.density:
             ones = K[i, self.y_train > .5]

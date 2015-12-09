@@ -46,14 +46,14 @@ def runSpamDensity(_i, j, features='all'):
     kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
     y, X = hw4u.split_truth_from_data(kf_train)
     y_test, X_test = hw4u.split_truth_from_data(kf_test)
-    print 'start scikit'
-    knnsci = skclassifier.fit(X, y)
     print 'start MyKNN'
     knn = myclassifier.fit(X, y)
-    print 'start sk pred'
-    y_sci = knnsci.score(X_test, X, y)
+    print 'start scikit'
+    knnsci = skclassifier.fit(X, y)
     print 'start my pred'
     y_pred = knn.predict(X_test, X, y)
+    print 'start sk pred'
+    y_sci = knnsci.score(X_test, X, y)
     print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), accuracy_score(fix_y(y_test), fix_y(y_pred)))
 
 def runSpamRadius(i, j, features='all'):
@@ -82,14 +82,14 @@ def SpamClassifier(features, skclassifier, myclassifier):
     kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
     y, X = hw4u.split_truth_from_data(kf_train)
     y_test, X_test = hw4u.split_truth_from_data(kf_test)
-    print 'start scikit'
-    knnsci = hw7u.KNN(classifier=skclassifier)
     print 'start MyKNN'
     knn = hw7u.KNN(classifier=myclassifier)
-    print 'start sk pred'
-    y_sci = knnsci.predict(X_test, X, y)
+    print 'start scikit'
+    knnsci = hw7u.KNN(classifier=skclassifier)
     print 'start my pred'
     y_pred = knn.predict(X_test, X, y)
+    print 'start sk pred'
+    y_sci = knnsci.predict(X_test, X, y)
     print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), accuracy_score(fix_y(y_test), fix_y(y_pred)))
 
 
