@@ -208,12 +208,13 @@ class Kernel(object):
 
     def cosine(self, X, Xt, i, j):
         # X and Xt are vectors
-        #return np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j]))  # equals cosine similarity
-        return cosine(X[i], Xt[j])
+        return 1-(np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j])))  # equals cosine distance
+        #return cosine(X[i], Xt[j])
         #return cosine_similarity(xi, xj)
 
     def cosine_sci(self, xi, xj):
-        return cosine(xi, xj)
+         return 1-(np.dot(xi, xj.T) / (la.norm(xi) * la.norm(xj)))  # equals cosine distance
+
 
     def gaussian(self, xi, xj, i=None, j=None, sigma=1, **kwargs):
         return np.sum([np.exp(-(la.norm(x-y) ** 2 / (2 * sigma ** 2))) for x, y in zip (xi, xj)])

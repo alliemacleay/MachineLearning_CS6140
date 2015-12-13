@@ -46,7 +46,7 @@ class Kernel(object):
         return np.sqrt(result)
 
     def cosine(self, X, Xt, i, j):
-        return np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j]))
+        return 1 - (np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j])))
         #return cosine(X[i], Xt[j])
 
     def gaussian(self, X, Xt, i, j, sigma):

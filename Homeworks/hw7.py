@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier, KernelDensity
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier, OutputCodeClassifier
 from sklearn.grid_search import GridSearchCV
+from sklearn.metrics.pairwise import cosine_distances, cosine_similarity
 import sklearn.linear_model as lm
 from mlpy import *
 
@@ -153,8 +154,9 @@ def runDigitsRadius(i, j, n):
     radius = [.5, .83, 1.3]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     print 'Digits radius is {} metric is {}'.format(radius[i], metric[j])
-    ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
-    skclf = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric=ma, outlier_label=10)
+    #ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
+    ma = cosine_distances
+    skclf = RadiusNeighborsClassifier(radius=.1, algorithm='brute', metric=ma, outlier_label=9)
     myclf = hw7u.MyKNN(radius=radius[i], metric='cosine', outlier_label=-1)
     runDigits(n, skclf, myclf)
 
@@ -170,19 +172,19 @@ def runDigits(n, skclf, myclf):
     y_test, X_test = hw4u.split_truth_from_data(kf_test, replace_zeros=False)
     y_test, X_test = np.asarray(y_test), np.asarray(X_test, dtype=np.float)
     print 'my fit'
-    clf = OneVsRestClassifier(myclf).fit(X, y)
+    #clf = OneVsRestClassifier(myclf).fit(X, y)
     print 'scikit fit'
     skclf = skclf.fit(X, y)
     print 'my predict'
-    y_pred = clf.predict(X_test)
-    myacc = accuracy_score(y_test, y_pred)
-    print '({})'.format(myacc)
+    #y_pred = clf.predict(X_test)
+    #myacc = accuracy_score(y_test, y_pred)
+    #print '({})'.format(myacc)
     print 'scikit predict'
     sk_pred = skclf.predict(X_test)
     print sk_pred
     print y_test
-    print y_pred
-    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), myacc)
+    #print y_pred
+    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), 0)
     #print 'My Accuracy: {}'.format(accuracy_score(y_test, y_pred))
 
 
