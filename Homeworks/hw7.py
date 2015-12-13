@@ -6,10 +6,14 @@ import CS6140_A_MacLeay.Homeworks.HW4 as hw4u
 import CS6140_A_MacLeay.Homeworks.HW7 as hw7u
 #import CS6140_A_MacLeay.Homeworks.HW7.speedy as hw7u
 import CS6140_A_MacLeay.utils.Perceptron as perc
+import CS6140_A_MacLeay.Homeworks.HW7.DualPerceptron as dperc
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier, KernelDensity
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier, OutputCodeClassifier
+from sklearn.grid_search import GridSearchCV
+import sklearn.linear_model as lm
+from mlpy import *
 
 __author__ = 'Allison MacLeay'
 
@@ -17,6 +21,8 @@ def q1a():
     """ KNN on spambase
     k = 1, j = 0
     SciKit Accuracy: 0.921908893709  My Accuracy: 0.921908893709
+    k = 2, j = 0
+    SciKit Accuracy: 0.908893709328  My Accuracy: 0.908893709328
     k = 3, j = 0
     SciKit Accuracy: 0.919739696312  My Accuracy: 0.919739696312
     k = 7, j = 0
@@ -27,11 +33,11 @@ def q1a():
     runSpamKNN(i, j, features='all')
 
 def runSpamKNN(i, j, features='all'):
-    n_neighbors = [1, 3, 7]
+    n_neighbors = [1, 3, 7, 2]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     ma = hw7u.Kernel(ktype=metric[j]).compute
     skclassifier = KNeighborsClassifier(n_neighbors=n_neighbors[i], algorithm='brute', metric=ma, p=2)
-    myclassifier = hw7u.MyKNN(n_neighbors=n_neighbors[i], metric=ma)
+    myclassifier = hw7u.MyKNN(n_neighbors=n_neighbors[i], metric='euclidean')
     SpamClassifier(features, skclassifier, myclassifier)
 
 def runSpamDensity(_i, j, features='all'):
@@ -41,28 +47,36 @@ def runSpamDensity(_i, j, features='all'):
     skclassifier = KernelDensity()
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
     k = 10
-    myclassifier = hw7u.MyKNN(metric=ma, density=True)
     all_folds = hw3u.partition_folds(data, k)
     kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
     y, X = hw4u.split_truth_from_data(kf_train)
     y_test, X_test = hw4u.split_truth_from_data(kf_test)
+    params = {'bandwidth': np.logspace(-1, 1, 20)}
+    grid = GridSearchCV(KernelDensity(), params)
+    grid.fit(X)
+    bw = grid.best_estimator_.bandwidth
+    print 'Bandwidth {}'.format(bw)
+
+
+    myclassifier = hw7u.MyKNN(metric=metric[j], density=True, bandwidth=bw)
     print 'start MyKNN'
-    knn = myclassifier.fit(X, y)
-    print 'start scikit'
-    knnsci = skclassifier.fit(X, y)
+    myclassifier.fit(X, y)
+    #print 'start scikit'
+    #knnsci = skclassifier.fit(X, y)
     print 'start my pred'
-    y_pred = knn.predict(X_test, X, y)
-    print 'start sk pred'
-    y_sci = knnsci.score(X_test, X, y)
-    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), accuracy_score(fix_y(y_test), fix_y(y_pred)))
+    y_pred = myclassifier.predict(X_test)
+    #print 'start sk pred'
+    #y_sci = knnsci.score(X_test)
+    #print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), accuracy_score(fix_y(y_test), fix_y(y_pred)))
+    print '2b: My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_pred)))
 
 def runSpamRadius(i, j, features='all'):
     radius = [.5, .8, 2.5]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     ma = hw7u.Kernel(ktype=metric[j]).compute
-    print 'spam radius is {}'.format(radius[i])
-    skclassifier = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric=ma, p=2, outlier_label=.5)
-    myclassifier = hw7u.MyKNN(radius=radius[i], metric=ma, outlier_label=.5)
+    print 'spam radius is {} distance metric is {}'.format(radius[i], metric[j])
+    skclassifier = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric='euclidean', p=2, outlier_label=.5)
+    myclassifier = hw7u.MyKNN(radius=radius[i], metric=metric[j], outlier_label=.5)
     SpamClassifier(features, skclassifier, myclassifier)
 
 
@@ -88,6 +102,7 @@ def SpamClassifier(features, skclassifier, myclassifier):
     knnsci = hw7u.KNN(classifier=skclassifier)
     print 'start my pred'
     y_pred = knn.predict(X_test, X, y)
+    print 'My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_pred)))
     print 'start sk pred'
     y_sci = knnsci.predict(X_test, X, y)
     print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), accuracy_score(fix_y(y_test), fix_y(y_pred)))
@@ -102,36 +117,44 @@ def q1b():
         k = 3, j = 0
         k = 7, j = 0
         k = 1, j = 1 (cosine)
+        n:2000 SciKit Accuracy: 0.895  My Accuracy: 0.895
+        k = 3, j = 1
+        k = 7, j = 1
         k = 1, j = 2 (gaussian)
+        k = 3, j = 2 (gaussian)
+
+        k = 7, j = 2 (gaussian)
         k = 1, j = 3 (poly2)
+        k = 3, j = 3 (poly2)
+        k = 7, j = 3 (poly2)
     """
-    i = 0  # controls k
-    j = 1  # controls the metric
+    i = 1  # controls k [1,3,7,2]
+    j = 2  # controls the metric
     n = 2000
     runDigitsKNN(i, j, n)
 
 def runDigitsKNN(i, j, n):
     n_neighbors = [1, 3, 7]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
-    ma = hw7u.Kernel(ktype=metric[j]).compute
+    ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
     skclf = KNeighborsClassifier(n_neighbors=n_neighbors[i], algorithm='brute', metric=ma, p=2)
-    myclf = hw7u.MyKNN(n_neighbors=n_neighbors[i], metric=ma)
+    myclf = hw7u.MyKNN(n_neighbors=n_neighbors[i], metric=metric[j])
     runDigits(n, skclf, myclf)
 
-def runDigitsDensity(_i, j, n):
+def runDigitsDensity(_i, j):
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
-    ma = hw7u.Kernel(ktype=metric[j]).compute
-    skclf = KernelDensity(algorithm='brute', metric=ma, p=2)
-    myclf = hw7u.MyKNN(metric=ma, density=True)
+    ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
+    skclf = KernelDensity(metric=ma)
+    myclf = hw7u.MyKNN(metric=metric[j], density=True)
     runDigits(n, skclf, myclf)
 
 def runDigitsRadius(i, j, n):
     radius = [.5, .83, 1.3]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     print 'Digits radius is {}'.format(radius[i])
-    ma = hw7u.Kernel(ktype=metric[j]).compute
+    ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
     skclf = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric=ma, p=2, outlier_label=10)
-    myclf = hw7u.MyKNN(radius=radius[i], metric=ma, outlier_label=10)
+    myclf = hw7u.MyKNN(radius=radius[i], metric='cosine', outlier_label=10)
     runDigits(n, skclf, myclf)
 
 def runDigits(n, skclf, myclf):
@@ -142,21 +165,23 @@ def runDigits(n, skclf, myclf):
     all_folds = hw3u.partition_folds(data, k)
     kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
     y, X = hw4u.split_truth_from_data(kf_train, replace_zeros=False)
-    y, X = np.asarray(y), np.asarray(X)
+    y, X = np.asarray(y, dtype=np.float), np.asarray(X)
     y_test, X_test = hw4u.split_truth_from_data(kf_test, replace_zeros=False)
-    y_test, X_test = np.asarray(y_test), np.asarray(X_test)
-    print 'scikit fit'
-    skclf = skclf.fit(X, y)
+    y_test, X_test = np.asarray(y_test), np.asarray(X_test, dtype=np.float)
     print 'my fit'
     clf = OneVsRestClassifier(myclf).fit(X, y)
-    print 'scikit predict'
-    sk_pred = skclf.predict(X_test)
+    print 'scikit fit'
+    skclf = skclf.fit(X, y)
     print 'my predict'
     y_pred = clf.predict(X_test)
+    myacc = accuracy_score(y_test, y_pred)
+    print '({})'.format(myacc)
+    print 'scikit predict'
+    sk_pred = skclf.predict(X_test)
     print sk_pred
     print y_test
     print y_pred
-    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), accuracy_score(y_test, y_pred))
+    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), myacc)
     #print 'My Accuracy: {}'.format(accuracy_score(y_test, y_pred))
 
 
@@ -184,14 +209,17 @@ def q2a():
 
     Running Digits Radius
     Loading 2000 records from haar dataset
+    radius = [.5, .8, 2.5]
+    metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
 
     """
     print 'Running Spam Radius'
     # r = [1, 5, 10]
-    runSpamRadius(2, 0)  # .833
+    # (radius, metric)
+    runSpamRadius(0, 0)  # .833
     print 'Running Digits Radius'
     # radius, metric, n_records
-    runDigitsRadius(1, 1, 2000)  # cosine r=.83 e=.886
+    #runDigitsRadius(1, 1, 2000)  # cosine r=.83 e=.886
 
 def q2b():
     """
@@ -202,8 +230,8 @@ def q2b():
    Digits + Poly(degree=2): test acc: 0.550
     """
     runSpamDensity(0, 2)  # Gaussian  # expect .91
-    runDigitsDensity(0, 2)  # Gaussian # expect .96
-    runDigitsDensity(0, 3)  # Poly # expect .55
+    #runDigitsDensity(0, 2)  # Gaussian # expect .96
+    #runDigitsDensity(0, 3)  # Poly # expect .55
 
 
 
@@ -214,7 +242,17 @@ def q3a():
         Expected accuracy dot product kernel : 50% average oscillating between 66% and 33%
         Expected accuracy with RBF kernel : 99.9% (depends on sigma)
     """
-    homework_2_perceptron()
+    test, train = utils.load_perceptron_data()
+    c = train.columns[:-1]
+    y_train = list(train[4])
+    X_train = train[c].as_matrix()
+    y_test = list(test[4])
+    X_test = test[c].as_matrix()
+
+    dual_perc = dperc.DualPerceptron(T=10)
+    dual_perc.fit(X_train, y_train)
+    y_pred = dual_perc.predict(X_test)
+    print '3a: Dual Percepton Accuracy: {}'.format(accuracy_score(y_test, y_pred))
 
 def q3b():
     X, y = dl.load_spirals()
@@ -230,12 +268,15 @@ def homework_2_perceptron():
 def q5():
     """ RELIEF algorithm - Feature selection with KNN """
     top_five = relief(5)
+    print top_five
     i = 0  # controls k
     j = 0  # controls the metric
     runSpamKNN(i, j, features=top_five)
 
 def relief(n):
-    max_iters = 100
+    max_iters = 1
+    j = 0
+    i = 1
     n_neighbors = [1, 3, 7]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     ma = hw7u.Kernel(ktype=metric[j]).compute
@@ -248,7 +289,9 @@ def relief(n):
     loops = 0
     weights = np.zeros(len(X[0]))
     while max_iters > loops:
-        skclassifier = KNeighborsClassifier(n_neighbors=n_neighbors[i], weights=weights, algorithm='brute', metric=ma, p=2)
+        #clf = lm.RidgeClassifier()
+        #clf.fit(X, y, )
+        skclassifier = KNeighborsClassifier(n_neighbors=n_neighbors[i], algorithm='brute', metric=ma, p=2)
         print 'start scikit'
         knnsci = hw7u.KNN(classifier=skclassifier)
         #print 'start MyKNN'
@@ -256,8 +299,7 @@ def relief(n):
         print 'start sk pred'
         y_sci = knnsci.predict(X_test, X, y)
         #print 'start my pred'
-        #y_pred = knn.predict(X_test, X, y)
-        print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), 'NA') #accuracy_score(fix_y(y_test), fix_y(y_pred)))
+        #y_pred = knn.predict(X_test, X, y) Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), 'NA') #accuracy_score(fix_y(y_test), fix_y(y_pred)))
         loops += 1
         for j in range(len(X_test[0])): #feature
             closest_same = None
@@ -265,14 +307,14 @@ def relief(n):
             for i in range(len(X_test)):  # data
 
                 for z_i in range(len(X)):
+                    diff = X[z_i][j] - X_test[i][j] ** 2
                     if y_sci[i] == y_test[i]:  # same
-                        diff = X[z_i][j] - X_test[i][j] ** 2
                         if closest_same is None or diff < closest_same:
                             closest_same = diff
                     else:  # opp
                         if closest_opp is None or diff < closest_opp:
                             closest_opp = diff
-            weights[j] -= (closest_same + closest_opp)
+            weights[j] += (-closest_same + closest_opp)
         print weights
 
     return sorted(zip(weights, range(len(weights))))[:n][1]

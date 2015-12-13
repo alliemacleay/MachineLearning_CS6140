@@ -20,13 +20,6 @@ cimport cython
 
 __author__ = 'Allison MacLeay'
 
-@cython.boundscheck(False) # turn of bounds-checking for entire function
-cdef inline float euclid_fast(np.ndarray[np.float_t, ndim=1] xi, np.ndarray[np.float_t, ndim=1] xj, int m):
-    cdef float result = 0
-    for k in range(m):
-        result += xi[k] - xj[k]
-    return result * result
-
 
 class Kernel(object):
     def __init__(self, ktype='euclidean', sigma=1):
@@ -34,7 +27,7 @@ class Kernel(object):
         self.ktype = ktype
         self.f = None
         if ktype == 'euclidean' or ktype == 'minkowski':
-            self.f = self.euclid
+            self.f = self.euclid_fast
         if ktype == 'cosine':
             self.f = self.cosine
         if ktype == 'gaussian':
@@ -43,23 +36,29 @@ class Kernel(object):
             self.f = self.poly2
 
     def euclid(object self, np.ndarray[np.float_t, ndim=1] xi, np.ndarray[np.float_t, ndim=1] xj, **kwargs):
-        return euclid_fast(xi, xj, xi.shape[0])
-        #return np.sum([(xi[m]-xj[m]) ** 2 for m in range(xi.shape[0])])
+        return np.sqrt(np.sum([(xi[m]-xj[m]) ** 2 for m in range(xi.shape[0])]))
 
-    def cosine(self, xi, xj, **kwargs):
-        return np.sum([cosine(x_i, x_j) for x_i, x_j in zip(xi, xj)])
+    def euclid_fast(object self, np.ndarray[np.float_t, ndim=2] X_train, np.ndarray[np.float_t, ndim=2] X_test, int i, int j):
+        cdef float result = 0
+        m = X_test.shape[1]
+        for k in range(m):
+            result += (X_train[i, k] - X_test[j, k]) ** 2
+        return np.sqrt(result)
 
-    def gaussian(self, xi, xj, sigma=1, **kwargs):
-        return np.sum([-np.sqrt(la.norm(x-y) ** 2 / (2 * sigma ** 2)) for x, y in zip (xi, xj)])
+    def cosine(self, X, Xt, i, j):
+        return cosine(X[i], Xt[j])
 
-    def poly2(self, xi, xj, **kwargs):
-        return np.dot(xi, xj) ** 2
+    def gaussian(self, X, Xt, i, j, sigma):
+        return np.sum([-np.sqrt(la.norm(x-y) ** 2 / (2 * sigma ** 2)) for x, y in zip (X[i], Xt[j])])
+
+    def poly2(self, X, Xt, i, j):
+        return np.dot(X[i], Xt[j]) ** 2
 
     def name(self):
-        return self.ktype
+        return str(self.ktype + ' fast')
 
 
-    def compute(self, xi, xj, **kwargs):
+    def compute(self, xi, xj):
         return self.f(xi, xj)
 
 def test():
@@ -74,7 +73,7 @@ def calc_K(object kernel, np.ndarray[np.float_t, ndim=2] X_test, np.ndarray[np.f
     cdef np.ndarray[np.float_t, ndim=2] K = np.zeros((n_samples, n_samples_train))
     for i in range(n_samples):
         for j in range(n_samples_train):
-            K[i, j] = kernel.f(X_test[i], X_train[j])
+            K[i, j] = kernel.f(X_test, X_train, i, j)
     return K
 
 
@@ -97,9 +96,9 @@ def decision_function_radius(np.ndarray[np.float_t, ndim=2] K, np.ndarray[np.flo
         for j in range(K.shape[1]):
             if K[i, j] < radius:
                 ct_neighbors += 1
-                N[i].append((K[i, j], j))
+                N[i].append(j)
         if ct_neighbors == 0:
-            N[i] = [[outlier_label, outlier_index]]
+            N[i] = [outlier_index]
             none_arr.append(i)
         N[i] = np.asarray(N[i])
     N = np.asarray(N)
@@ -108,7 +107,7 @@ def decision_function_radius(np.ndarray[np.float_t, ndim=2] K, np.ndarray[np.flo
         print '{} outliers'.format(len(none_arr))
         print none_arr
     for i in xrange(N.shape[0]):
-        y_pred[i] = cls_metric([y_train[N[i][j][1]] for j in xrange(N[i].shape[0])])
+        y_pred[i] = cls_metric([y_train[N[i][j]] for j in xrange(N[i].shape[0])])
 
     return y_pred
 

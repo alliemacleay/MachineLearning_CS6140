@@ -42,6 +42,9 @@ class Kernel(object):
         else:
             return 'ERR: not implemented'
 
+    def name(self):
+        return self.ktype
+
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function
 cdef inline float bias(float b, float Ei, float yi, float yj, float aidiff, float ajdiff,
