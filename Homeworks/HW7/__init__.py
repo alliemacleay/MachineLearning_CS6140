@@ -208,6 +208,7 @@ class Kernel(object):
 
     def cosine(self, X, Xt, i, j):
         # X and Xt are vectors
+        #return np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j]))  # equals cosine similarity
         return cosine(X[i], Xt[j])
         #return cosine_similarity(xi, xj)
 

@@ -136,8 +136,8 @@ if __name__ == '__main__':
     #testCython()
     #hw7.q1a()  # works
     #hw7.q1b()  # slow
-    #hw7.q2a()  # radius -- broken
+    hw7.q2a()  # radius -- broken
     #hw7.q2b()  # density -- broken
     #hw7.q3a()  # dual perceptron -- broken
-    hw7.q3b()  # dual on spirals -- not done
+    #hw7.q3b()  # dual on spirals -- not done (contingent on dual perceptron)
     #hw7.q5()  # ridge feature selection -- confused

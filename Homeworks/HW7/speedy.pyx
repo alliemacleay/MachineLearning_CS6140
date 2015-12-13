@@ -38,15 +38,16 @@ class Kernel(object):
     def euclid(object self, np.ndarray[np.float_t, ndim=1] xi, np.ndarray[np.float_t, ndim=1] xj, **kwargs):
         return np.sqrt(np.sum([(xi[m]-xj[m]) ** 2 for m in range(xi.shape[0])]))
 
-    def euclid_fast(object self, np.ndarray[np.float_t, ndim=2] X_train, np.ndarray[np.float_t, ndim=2] X_test, int i, int j):
+    def euclid_fast(object self, np.ndarray[np.float_t, ndim=2] X_test, np.ndarray[np.float_t, ndim=2] X_train, int i, int j):
         cdef float result = 0
         m = X_test.shape[1]
         for k in range(m):
-            result += (X_train[i, k] - X_test[j, k]) ** 2
+            result += (X_test[i, k] - X_train[j, k]) ** 2
         return np.sqrt(result)
 
     def cosine(self, X, Xt, i, j):
-        return cosine(X[i], Xt[j])
+        return np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j]))
+        #return cosine(X[i], Xt[j])
 
     def gaussian(self, X, Xt, i, j, sigma):
         return np.sum([-np.sqrt(la.norm(x-y) ** 2 / (2 * sigma ** 2)) for x, y in zip (X[i], Xt[j])])

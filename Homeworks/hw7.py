@@ -75,8 +75,9 @@ def runSpamRadius(i, j, features='all'):
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     ma = hw7u.Kernel(ktype=metric[j]).compute
     print 'spam radius is {} distance metric is {}'.format(radius[i], metric[j])
-    skclassifier = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric='euclidean', p=2, outlier_label=.5)
-    myclassifier = hw7u.MyKNN(radius=radius[i], metric=metric[j], outlier_label=.5)
+    #skclassifier = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric='euclidean', p=2, outlier_label=-1)
+    skclassifier = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric='euclidean', outlier_label=-1)
+    myclassifier = hw7u.MyKNN(radius=radius[i], metric=metric[j], outlier_label=-1)
     SpamClassifier(features, skclassifier, myclassifier)
 
 
@@ -151,10 +152,10 @@ def runDigitsDensity(_i, j):
 def runDigitsRadius(i, j, n):
     radius = [.5, .83, 1.3]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
-    print 'Digits radius is {}'.format(radius[i])
+    print 'Digits radius is {} metric is {}'.format(radius[i], metric[j])
     ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
-    skclf = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric=ma, p=2, outlier_label=10)
-    myclf = hw7u.MyKNN(radius=radius[i], metric='cosine', outlier_label=10)
+    skclf = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric=ma, outlier_label=10)
+    myclf = hw7u.MyKNN(radius=radius[i], metric='cosine', outlier_label=-1)
     runDigits(n, skclf, myclf)
 
 def runDigits(n, skclf, myclf):
@@ -198,7 +199,11 @@ def q2a():
     mean_euclid = 1.2903757736212245
 
     A) Spam + Euclidian + R=2.5: test acc: 0.833
+    SciKit Accuracy: 0.605206073753  My Accuracy: 0.605206073753
    Digits + Cosine + R=0.83: test acc: 0.886
+   n = 2000 SciKit Accuracy: 0.18  My Accuracy: 0.175  12/13 14:40
+   n = 2000 SciKit Accuracy: 0.205  My Accuracy: 0.22
+   n = 5000 SciKit Accuracy: 0.166  My Accuracy: 0.166
 
     Running Spam Radius
     spam radius is 0.8
@@ -216,10 +221,10 @@ def q2a():
     print 'Running Spam Radius'
     # r = [1, 5, 10]
     # (radius, metric)
-    runSpamRadius(0, 0)  # .833
+    #runSpamRadius(2, 0)  # runSpamRadius(2, 0)  e=.833
     print 'Running Digits Radius'
     # radius, metric, n_records
-    #runDigitsRadius(1, 1, 2000)  # cosine r=.83 e=.886
+    runDigitsRadius(1, 1, 2000)  # cosine r=.83 e=.886
 
 def q2b():
     """
