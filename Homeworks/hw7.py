@@ -8,7 +8,7 @@ import CS6140_A_MacLeay.Homeworks.HW7 as hw7u
 import CS6140_A_MacLeay.utils.Perceptron as perc
 import CS6140_A_MacLeay.Homeworks.HW7.DualPerceptron as dperc
 import numpy as np
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier, KernelDensity
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier, OutputCodeClassifier
 from sklearn.grid_search import GridSearchCV
@@ -43,29 +43,24 @@ def runSpamKNN(i, j, features='all'):
 
 def runSpamDensity(_i, j, features='all'):
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
-    ma = hw7u.Kernel(ktype=metric[j]).compute
-    #skclassifier = KernelDensity(kernel=ma)
-    skclassifier = KernelDensity()
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
     k = 10
     all_folds = hw3u.partition_folds(data, k)
     kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
     y, X = hw4u.split_truth_from_data(kf_train)
     y_test, X_test = hw4u.split_truth_from_data(kf_test)
-    params = {'bandwidth': np.logspace(-1, 1, 20)}
-    grid = GridSearchCV(KernelDensity(), params)
-    grid.fit(X)
-    bw = grid.best_estimator_.bandwidth
-    print 'Bandwidth {}'.format(bw)
 
+    print(len(X))
+    print(len(X_test))
 
-    myclassifier = hw7u.MyKNN(metric=metric[j], density=True, bandwidth=bw)
+    myclassifier = hw7u.MyKNN(metric='cosine_similarity', density=True)
     print 'start MyKNN'
     myclassifier.fit(X, y)
     #print 'start scikit'
     #knnsci = skclassifier.fit(X, y)
     print 'start my pred'
     y_pred = myclassifier.predict(X_test)
+    print(y_pred)
     #print 'start sk pred'
     #y_sci = knnsci.score(X_test)
     #print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), accuracy_score(fix_y(y_test), fix_y(y_pred)))
@@ -151,12 +146,12 @@ def runDigitsDensity(_i, j):
     runDigits(n, skclf, myclf)
 
 def runDigitsRadius(i, j, n):
-    radius = [.5, .83, 1.3]
+    radius = [.5, .1, 1.3]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     print 'Digits radius is {} metric is {}'.format(radius[i], metric[j])
-    #ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
-    ma = cosine_distances
-    skclf = RadiusNeighborsClassifier(radius=.1, algorithm='brute', metric=ma, outlier_label=9)
+    ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
+    #ma = cosine_distances
+    skclf = RadiusNeighborsClassifier(radius=radius[i], algorithm='brute', metric=ma, outlier_label=9)
     myclf = hw7u.MyKNN(radius=radius[i], metric='cosine', outlier_label=-1)
     runDigits(n, skclf, myclf)
 
@@ -172,19 +167,19 @@ def runDigits(n, skclf, myclf):
     y_test, X_test = hw4u.split_truth_from_data(kf_test, replace_zeros=False)
     y_test, X_test = np.asarray(y_test), np.asarray(X_test, dtype=np.float)
     print 'my fit'
-    #clf = OneVsRestClassifier(myclf).fit(X, y)
+    clf = OneVsRestClassifier(myclf).fit(X, y)
     print 'scikit fit'
     skclf = skclf.fit(X, y)
     print 'my predict'
-    #y_pred = clf.predict(X_test)
-    #myacc = accuracy_score(y_test, y_pred)
-    #print '({})'.format(myacc)
+    y_pred = clf.predict(X_test)
+    myacc = accuracy_score(y_test, y_pred)
+    print '({})'.format(myacc)
     print 'scikit predict'
     sk_pred = skclf.predict(X_test)
     print sk_pred
     print y_test
-    #print y_pred
-    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), 0)
+    print y_pred
+    print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), myacc)
     #print 'My Accuracy: {}'.format(accuracy_score(y_test, y_pred))
 
 
@@ -204,8 +199,10 @@ def q2a():
     SciKit Accuracy: 0.605206073753  My Accuracy: 0.605206073753
    Digits + Cosine + R=0.83: test acc: 0.886
    n = 2000 SciKit Accuracy: 0.18  My Accuracy: 0.175  12/13 14:40
-   n = 2000 SciKit Accuracy: 0.205  My Accuracy: 0.22
-   n = 5000 SciKit Accuracy: 0.166  My Accuracy: 0.166
+
+   Digits + Cosine + R=0.1:
+   n = 2000 SciKit Accuracy: 0.84  My Accuracy: 0.815
+
 
     Running Spam Radius
     spam radius is 0.8
@@ -235,6 +232,8 @@ def q2b():
        B) Spam + Gaussian(sigma=1.0): test acc: 0.910
    Digits + Guassian(sigma=1.0): test acc: 0.926
    Digits + Poly(degree=2): test acc: 0.550
+
+   Cosine Similarity - My Accuracy: 0.8568329718
     """
     runSpamDensity(0, 2)  # Gaussian  # expect .91
     #runDigitsDensity(0, 2)  # Gaussian # expect .96
@@ -249,6 +248,7 @@ def q3a():
         Expected accuracy dot product kernel : 50% average oscillating between 66% and 33%
         Expected accuracy with RBF kernel : 99.9% (depends on sigma)
     """
+    np.random.seed(2)
     test, train = utils.load_perceptron_data()
     c = train.columns[:-1]
     y_train = list(train[4])
@@ -259,6 +259,7 @@ def q3a():
     dual_perc = dperc.DualPerceptron(T=10)
     dual_perc.fit(X_train, y_train)
     y_pred = dual_perc.predict(X_test)
+    print '3a: Dual Percepton AUC: {}'.format(roc_auc_score(y_test, dual_perc.decision_function(X_test)))
     print '3a: Dual Percepton Accuracy: {}'.format(accuracy_score(y_test, y_pred))
 
 def q3b():
@@ -295,36 +296,26 @@ def relief(n):
     y_test, X_test = hw4u.split_truth_from_data(kf_test)
     loops = 0
     weights = np.zeros(len(X[0]))
-    while max_iters > loops:
-        #clf = lm.RidgeClassifier()
-        #clf.fit(X, y, )
-        skclassifier = KNeighborsClassifier(n_neighbors=n_neighbors[i], algorithm='brute', metric=ma, p=2)
-        print 'start scikit'
-        knnsci = hw7u.KNN(classifier=skclassifier)
-        #print 'start MyKNN'
-        #knn = hw7u.KNN(classifier=myclassifier)
-        print 'start sk pred'
-        y_sci = knnsci.predict(X_test, X, y)
-        #print 'start my pred'
-        #y_pred = knn.predict(X_test, X, y) Accuracy: {}  My Accuracy: {}'.format(accuracy_score(fix_y(y_test), fix_y(y_sci)), 'NA') #accuracy_score(fix_y(y_test), fix_y(y_pred)))
-        loops += 1
-        for j in range(len(X_test[0])): #feature
+    loops += 1
+    for j in range(len(X[0])): #feature
+
+        for i in range(len(X)):  # data
             closest_same = None
             closest_opp = None
-            for i in range(len(X_test)):  # data
-
-                for z_i in range(len(X)):
-                    diff = X[z_i][j] - X_test[i][j] ** 2
-                    if y_sci[i] == y_test[i]:  # same
-                        if closest_same is None or diff < closest_same:
-                            closest_same = diff
-                    else:  # opp
-                        if closest_opp is None or diff < closest_opp:
-                            closest_opp = diff
+            for z_i in range(len(X)):
+                if z_i == i:
+                    continue
+                diff = (X[z_i][j] - X[i][j]) ** 2
+                if y[z_i] == y[i]:  # same
+                    if closest_same is None or diff < closest_same:
+                        closest_same = diff
+                else:  # opp
+                    if closest_opp is None or diff < closest_opp:
+                        closest_opp = diff
             weights[j] += (-closest_same + closest_opp)
-        print weights
+    print weights
 
-    return sorted(zip(weights, range(len(weights))))[:n][1]
+    return sorted(zip(weights, range(len(weights))), reverse=True)[:n][1]
 
 
 

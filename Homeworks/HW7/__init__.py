@@ -1,5 +1,6 @@
 import inspect
 import warnings
+import collections
 import cython
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KernelDensity
@@ -76,10 +77,12 @@ class MyKNN(object):
         if type(X_test) is not np.ndarray:
             X_test = np.asarray(X_test)
         #K = speedy.calc_K(self.kernel, X_test, self.X_train)
+        print('start kernel')
         K = calc_K(self.kernel, X_test, self.X_train)
 
         print 'my Kernel calculated'
         print K
+        print K.shape
         y_pred = np.zeros(X_test.shape[0])
         if self.radius is not None:
             #radius
@@ -89,21 +92,29 @@ class MyKNN(object):
         elif self.density:
             px_given_1 = np.zeros(K.shape[0])
             px_given_0 = np.zeros(K.shape[0])
-            p1 = np.zeros(K.shape[0])
+            p1 = float(np.sum(self.y_train > .5)) / self.y_train.shape[0]
+            print(collections.Counter(self.y_train))
+            print(p1)
             #p0_arr = np.zeros(K.shape[0])
             for i in range(K.shape[0]):
+                #print('predict {}'.format(i))
                 # k for each sample in test set i-test j-train
                 ones = K[i, self.y_train > .5]
                 zeros = K[i, self.y_train <= .5]
                 n_ones = len(ones)
                 n_zeros = len(zeros)
-                p1[i] = float(len(ones)) / X_test.shape[0]
                 px_given_1[i] = float(np.sum(ones)) / n_ones
                 px_given_0[i] = float(np.sum(zeros)) / n_zeros
-            p1_const = np.sum(px_given_1) * np.sum(p1)
-            p0_const = np.sum(px_given_0) * np.sum(1 - p1)
-            px1 = [float(p1[i] * px_given_1[i]) / p1_const for i in xrange(K.shape[0])]
-            px0 = [float((1 - p1[i]) * px_given_0[i]) / p0_const for i in xrange(K.shape[0])]
+
+            px1 = np.asarray([float(p1 * px_given_1[i]) for i in xrange(K.shape[0])])
+            print(px1)
+
+            px0 = np.asarray([float((1.0 - p1) * px_given_0[i]) for i in xrange(K.shape[0])])
+            zs = [a + b for a, b in zip(px0, px1)]
+
+            px1 /= zs
+            px0 /= zs
+            print(px1)
             y_pred = [1 if px1[i] > px0[i] else 0 for i in range(K.shape[0])]
         else:
             self.N = np.array([sorted(zip(K[i, :], range(len(K[i, :]))))[:self.n_neighbors] for i in range(K.shape[0])])
@@ -197,6 +208,8 @@ class Kernel(object):
             self.f = self.cosine
         if ktype == 'cosine_sci':
             self.f = self.cosine_sci
+        if ktype == 'cosine_similarity':
+            self.f = self.cosine_similarity
         if ktype == 'gaussian':
             self.f = self.gaussian
         if ktype == 'poly2':
@@ -211,6 +224,9 @@ class Kernel(object):
         return 1-(np.dot(X[i], Xt[j].T) / (la.norm(X[i]) * la.norm(Xt[j])))  # equals cosine distance
         #return cosine(X[i], Xt[j])
         #return cosine_similarity(xi, xj)
+
+    def cosine_similarity(self, X, Xt, i, j):
+        return cosine_similarity(X[i], Xt[j])
 
     def cosine_sci(self, xi, xj):
          return 1-(np.dot(xi, xj.T) / (la.norm(xi) * la.norm(xj)))  # equals cosine distance
