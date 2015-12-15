@@ -92,6 +92,7 @@ class MyKNN(object):
         elif self.density:
             px_given_1 = np.zeros(K.shape[0])
             px_given_0 = np.zeros(K.shape[0])
+            print set(self.y_train)
             p1 = float(np.sum(self.y_train > .5)) / self.y_train.shape[0]
             print(collections.Counter(self.y_train))
             print(p1)
@@ -99,12 +100,21 @@ class MyKNN(object):
             for i in range(K.shape[0]):
                 #print('predict {}'.format(i))
                 # k for each sample in test set i-test j-train
+
                 ones = K[i, self.y_train > .5]
                 zeros = K[i, self.y_train <= .5]
+                print ones
                 n_ones = len(ones)
                 n_zeros = len(zeros)
-                px_given_1[i] = float(np.sum(ones)) / n_ones
-                px_given_0[i] = float(np.sum(zeros)) / n_zeros
+                sum_ones = float(np.sum(ones))
+                sum_zeros = float(np.sum(zeros))
+                total = sum_ones + sum_zeros
+                if total == 0:
+                    px_given_1[i] = 0
+                    px_given_0[i] = 0
+                    continue
+                px_given_1[i] = sum_ones / total
+                px_given_0[i] = sum_zeros / total
 
             px1 = np.asarray([float(p1 * px_given_1[i]) for i in xrange(K.shape[0])])
             print(px1)
@@ -114,7 +124,7 @@ class MyKNN(object):
 
             px1 /= zs
             px0 /= zs
-            print(px1)
+            print(zip(px1, px0))
             y_pred = [1 if px1[i] > px0[i] else 0 for i in range(K.shape[0])]
         else:
             self.N = np.array([sorted(zip(K[i, :], range(len(K[i, :]))))[:self.n_neighbors] for i in range(K.shape[0])])
@@ -214,6 +224,12 @@ class Kernel(object):
             self.f = self.gaussian
         if ktype == 'poly2':
             self.f = self.poly2
+        if ktype == 'gaussian_sci':
+            self.f = self.gaussian_sci
+        if ktype == 'gaussian_density':
+            self.f = self.gaussian_density
+        if ktype == 'poly2_sci':
+            self.f = self.poly2_sci
 
     def euclid(self, xi, xj, **kwargs):
         return np.sqrt(np.sum([(xi[m]-xj[m]) ** 2 for m in range(xi.shape[0])]))
@@ -232,11 +248,29 @@ class Kernel(object):
          return 1-(np.dot(xi, xj.T) / (la.norm(xi) * la.norm(xj)))  # equals cosine distance
 
 
-    def gaussian(self, xi, xj, i=None, j=None, sigma=1, **kwargs):
+    def xxxgaussian(self, xi, xj, i=None, j=None, sigma=1, **kwargs):
         return np.sum([np.exp(-(la.norm(x-y) ** 2 / (2 * sigma ** 2))) for x, y in zip (xi, xj)])
 
-    def poly2(self, xi, xj, **kwargs):
-        return np.dot(xi, xj) ** 2
+    def gaussian(self, x, y, i=None, j=None, sigma=1, **kwargs):
+        return np.exp(-(la.norm(x[i]-y[j]) ** 2 / (2 * sigma ** 2)))
+
+    def gaussian_sci(self, xi, yj):
+        sigma = 1
+        return np.exp(-(la.norm(xi-yj) ** 2 / (2 * sigma ** 2)))
+
+    def gaussian_density(self, x, y, i, j):
+        deltaRow = x[i] - y[j]
+        return np.exp(np.dot(deltaRow, deltaRow.T) / -(2**2))
+
+
+    def poly2(self, x, y, i, j):
+        return - np.dot(x[i], y[j]) ** 2
+        #return np.sum[xi*yi+ xi**2 * yi**2 + 2*xi*yi for xi, yi in zip(x[i], y[i])]
+
+    def poly2_sci(self, xi, xj, **kwargs):
+        return - np.dot(xi, xj) ** 2
+        #return np.sum[xi*yi+ xi**2 * yi**2 + 2*xi*yi for xi, yi in zip(x[i], y[i])]
+
 
     def name(self):
         return self.ktype

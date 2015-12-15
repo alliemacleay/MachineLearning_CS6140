@@ -29,7 +29,7 @@ def q1a():
     k = 7, j = 0
     SciKit Accuracy: 0.915401301518  My Accuracy: 0.915401301518
     """
-    i = 0  # controls k
+    i = 1  # controls k
     j = 0  # controls the metric
     runSpamKNN(i, j, features='all')
 
@@ -42,7 +42,7 @@ def runSpamKNN(i, j, features='all'):
     SpamClassifier(features, skclassifier, myclassifier)
 
 def runSpamDensity(_i, j, features='all'):
-    metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
+    metric = ['gaussian', 'poly2', 'cosine_similarity', 'gaussian_density']
     data = utils.pandas_to_data(utils.load_and_normalize_spam_data())
     k = 10
     all_folds = hw3u.partition_folds(data, k)
@@ -53,7 +53,7 @@ def runSpamDensity(_i, j, features='all'):
     print(len(X))
     print(len(X_test))
 
-    myclassifier = hw7u.MyKNN(metric='cosine_similarity', density=True)
+    myclassifier = hw7u.MyKNN(metric=metric[j], density=True)
     print 'start MyKNN'
     myclassifier.fit(X, y)
     #print 'start scikit'
@@ -121,13 +121,15 @@ def q1b():
         k = 3, j = 2 (gaussian)
 
         k = 7, j = 2 (gaussian)
+        n:2000 .87
         k = 1, j = 3 (poly2)
+        .58
         k = 3, j = 3 (poly2)
         k = 7, j = 3 (poly2)
     """
     i = 1  # controls k [1,3,7,2]
     j = 2  # controls the metric
-    n = 2000
+    n = 5000
     runDigitsKNN(i, j, n)
 
 def runDigitsKNN(i, j, n):
@@ -138,15 +140,40 @@ def runDigitsKNN(i, j, n):
     myclf = hw7u.MyKNN(n_neighbors=n_neighbors[i], metric=metric[j])
     runDigits(n, skclf, myclf)
 
-def runDigitsDensity(_i, j):
+def runDigitsDensity(n,_i, j):
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
-    skclf = KernelDensity(metric=ma)
+    #skclf = KernelDensity(metric=ma)
     myclf = hw7u.MyKNN(metric=metric[j], density=True)
-    runDigits(n, skclf, myclf)
+    mnsize = n
+    df = hw6u.load_mnist_features(mnsize)
+    data = utils.pandas_to_data(df)
+    k = 10
+    all_folds = hw3u.partition_folds(data, k)
+    kf_train, kf_test = dl.get_train_and_test(all_folds, 0)
+    y, X = hw4u.split_truth_from_data(kf_train, replace_zeros=False)
+    y, X = np.asarray(y, dtype=np.float), np.asarray(X)
+    y_test, X_test = hw4u.split_truth_from_data(kf_test, replace_zeros=False)
+    y_test, X_test = np.asarray(y_test), np.asarray(X_test, dtype=np.float)
+    print 'my fit'
+    clf = OneVsRestClassifier(myclf).fit(X, y)
+    print 'scikit fit'
+    #skclf = skclf.fit(X, y)
+    print 'my predict'
+    y_pred = clf.predict(X_test)
+    myacc = accuracy_score(y_test, y_pred)
+    print '({})'.format(myacc)
+    #print 'scikit predict'
+    #sk_pred = skclf.predict(X_test)
+    #print sk_pred
+    print y_test
+    print y_pred
+    #print 'SciKit Accuracy: {}  My Accuracy: {}'.format(accuracy_score(y_test, sk_pred), myacc)
+    print 'My Accuracy: {}'.format(myacc)
+
 
 def runDigitsRadius(i, j, n):
-    radius = [.5, .1, 1.3]
+    radius = [.5, .1, 1.3, .83]
     metric = ['minkowski', 'cosine', 'gaussian', 'poly2']
     print 'Digits radius is {} metric is {}'.format(radius[i], metric[j])
     ma = hw7u.Kernel(ktype=metric[j]+'_sci').compute
@@ -223,7 +250,7 @@ def q2a():
     #runSpamRadius(2, 0)  # runSpamRadius(2, 0)  e=.833
     print 'Running Digits Radius'
     # radius, metric, n_records
-    runDigitsRadius(1, 1, 2000)  # cosine r=.83 e=.886
+    runDigitsRadius(3, 1, 5000)  # cosine r=.83 e=.886
 
 def q2b():
     """
@@ -235,9 +262,11 @@ def q2b():
 
    Cosine Similarity - My Accuracy: 0.8568329718
     """
-    runSpamDensity(0, 2)  # Gaussian  # expect .91
-    #runDigitsDensity(0, 2)  # Gaussian # expect .96
-    #runDigitsDensity(0, 3)  # Poly # expect .55
+    #runSpamDensity(0, 2)  # Cosine similarity  # expect .91
+    #runSpamDensity(0, 3)  # Gaussian  # expect .91
+    runSpamDensity(0, 1)  # Gaussian  # expect .91
+    #runDigitsDensity(2000, 0, 2)  # Gaussian # expect .96
+    #runDigitsDensity(2000, 0, 3)  # Poly # expect .55
 
 
 
@@ -256,14 +285,38 @@ def q3a():
     y_test = list(test[4])
     X_test = test[c].as_matrix()
 
-    dual_perc = dperc.DualPerceptron(T=10)
+    dual_perc = dperc.DualPerceptron(T=100)
     dual_perc.fit(X_train, y_train)
     y_pred = dual_perc.predict(X_test)
     print '3a: Dual Percepton AUC: {}'.format(roc_auc_score(y_test, dual_perc.decision_function(X_test)))
-    print '3a: Dual Percepton Accuracy: {}'.format(accuracy_score(y_test, y_pred))
+    print '3a: Dual Percepton Accuracy (train): {}'.format(accuracy_score(y_train, dual_perc.predict(X_train)))
+    print '3a: Dual Percepton Accuracy (test): {}'.format(accuracy_score(y_test, y_pred))
 
 def q3b():
     X, y = dl.load_spirals()
+    X_test, y_test = [], []
+    X_train, y_train = [], []
+
+    idx = np.random.choice(range(len(X)), size=np.floor(len(X) * .2))
+    for i in range(len(X)):
+        if i in idx:
+            X_test.append(X[i])
+            y_test.append(y[i])
+        else:
+            X_train.append(X[i])
+            y_train.append(y[i])
+    X_test = np.array(X_test)
+    X_train = np.array(X_train)
+    y_test = np.array(y_test)
+    y_train = np.array(y_train)
+    dual_perc = dperc.DualPerceptron(T=100)
+    dual_perc.fit(X_train, y_train)
+    dot_p = dual_perc.predict(X_test)
+    dp_gauss = dperc.DualPerceptron(T=100, kname='gaussian')
+    dp_gauss.fit(X_train, y_train)
+    gauss_p = dp_gauss.predict(X_test)
+    print 'AUC Dot: {}  Gaussian: {}'.format(accuracy_score(y_test, dot_p), accuracy_score(y_test, gauss_p))
+
 
 def homework_2_perceptron():
     """ Perceptron """
@@ -279,6 +332,7 @@ def q5():
     print top_five
     i = 0  # controls k
     j = 0  # controls the metric
+    # SciKit Accuracy: 0.921908893709  My Accuracy: 0.921908893709
     runSpamKNN(i, j, features=top_five)
 
 def relief(n):
@@ -297,12 +351,14 @@ def relief(n):
     loops = 0
     weights = np.zeros(len(X[0]))
     loops += 1
-    for j in range(len(X[0])): #feature
+    n_features = len(X[0])
+    n_samples = len(X)
+    for j in range(n_features): #feature
 
-        for i in range(len(X)):  # data
+        for i in range(n_samples):  # data
             closest_same = None
             closest_opp = None
-            for z_i in range(len(X)):
+            for z_i in range(n_samples):
                 if z_i == i:
                     continue
                 diff = (X[z_i][j] - X[i][j]) ** 2
@@ -313,6 +369,8 @@ def relief(n):
                     if closest_opp is None or diff < closest_opp:
                         closest_opp = diff
             weights[j] += (-closest_same + closest_opp)
+            if i % 1000 == 0:
+                print 'feature {} of {}, sample {} of {}'.format(j, n_features, i, n_samples)
     print weights
 
     return sorted(zip(weights, range(len(weights))), reverse=True)[:n][1]
